@@ -19,7 +19,7 @@ Build mode: fast
   Learner check: Run `npm run dev`, open `http://localhost:3000`, sign up with your email, click the confirmation link, and confirm you land on the onboarding placeholder. Sign out, sign back in, and confirm you're sent on past the landing page.
   Commit: `Scaffold app with Supabase auth, landing page, and schema`
 
-- [ ] **2. You can upload your resume and see it saved as your profile**
+- [x] **2. You can upload your resume and see it saved as your profile**
   Becomes usable: On `/onboarding` you upload a PDF or .docx and write your background; Claude parses it, the rows are saved to your account, and `/profile` shows everything it found (read-only for now). The parse is logged in `llm_runs`. An unreadable file lands you on `/profile?unreadable=1` with the "couldn't read" message.
   Why now: It's the riskiest unfamiliar ground — text extraction on a server, Claude structured outputs, and writing many linked rows under RLS — and tailoring has nothing to work on without a saved profile.
   PRD ref: `prd.md > Onboarding`, `prd.md > Profile` (fields show up filled in, background under Personal Information), `prd.md > States and Boundaries` (Resume can't be read, AI working)
@@ -103,3 +103,4 @@ Activity mode:
 ## Revisions
 
 - Slice 1: RLS policies use `(select auth.uid())` and foreign keys on `profile_links`, `profile_summaries`, `item_skills` got indexes (Supabase performance guidance; no behavior change). `.env.example` renamed the key to `NEXT_PUBLIC_SUPABASE_ANON_KEY` to match the code and README. Migration applied to the Supabase project via MCP.
+- Slice 2: uploads failed with "permission denied" — this Supabase project doesn't grant table privileges to signed-in users automatically, so RLS never got a chance to apply. Added `0002_grants.sql` (select/insert/update/delete to `authenticated` only; anon gets nothing), applied it, and confirmed one user can write their rows while another sees none. This also fixes slice 1's returning-user routing, which silently fell back to onboarding.

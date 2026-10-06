@@ -6,3 +6,9 @@ body {
   @apply bg-gray-50 text-gray-900;
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
+
+/* LoadingBar: a block sliding left to right. */
+@keyframes loading {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(300%); }
+}
