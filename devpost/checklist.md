@@ -39,7 +39,7 @@ Build mode: fast
   Learner check: Paste a real job posting you'd apply to, with the summary on. Read the rewrites against your originals: are they the same real work, aimed at this job, with nothing invented? Flip a few to "Use AI's", edit one. Then open `llm_runs` in Supabase and compare Claude's raw response with what the workspace shows.
   Commit: `Add tailoring engine and side-by-side bullet workspace`
 
-- [ ] **4. You can remove, replace, and reorder to shape the tailored resume**
+- [x] **4. You can remove, replace, and reorder to shape the tailored resume**
   Becomes usable: In the workspace you can remove a bullet, replace one with another bullet from the same item (or see "No other bullets for this item"), and drag sections in the table of contents to reorder the resume.
   Why now: These complete the "you decide what stays" control around the kernel, and they change the workspace state that downloads will read, so they land before export.
   PRD ref: `prd.md > Bullet Comparison` (Remove, Replace), `prd.md > Table of Contents`, `prd.md > States and Boundaries` (Replace with no alternatives)

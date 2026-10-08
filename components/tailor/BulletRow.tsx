@@ -3,36 +3,56 @@
 import type { WorkspaceAction } from "@/lib/resume/workspace-reducer";
 import { sideText, type Side, type TailoredBullet } from "@/lib/resume/types";
 
+const button = "rounded border border-gray-300 bg-white px-2 py-1 disabled:opacity-40";
+
 // One bullet: yours on the left, the AI's on the right. Only the selected side is editable.
+// A bullet swapped in with Replace has no AI version, so it's a single column.
 export default function BulletRow({
   bullet,
   dispatch,
+  onReplace,
 }: {
   bullet: TailoredBullet;
   dispatch: (a: WorkspaceAction) => void;
+  onReplace: () => void;
 }) {
   const unchanged = bullet.ai === bullet.original;
 
   return (
     <div className="space-y-2">
-      <div className="grid grid-cols-2 gap-3">
-        <Column bullet={bullet} side="original" label="Yours" dispatch={dispatch} />
-        <Column bullet={bullet} side="ai" label={unchanged ? "AI's (no change)" : "AI's"} dispatch={dispatch} />
-      </div>
+      {bullet.ai === null ? (
+        <Column bullet={bullet} side="original" label="Yours (replaced, no AI version)" dispatch={dispatch} />
+      ) : (
+        <div className="grid grid-cols-2 gap-3">
+          <Column bullet={bullet} side="original" label="Yours" dispatch={dispatch} />
+          <Column bullet={bullet} side="ai" label={unchanged ? "AI's (no change)" : "AI's"} dispatch={dispatch} />
+        </div>
+      )}
       <div className="flex gap-2 text-xs">
-        <button
-          onClick={() => dispatch({ type: "select", bulletId: bullet.id, side: "original" })}
-          disabled={bullet.selected === "original"}
-          className="rounded border border-gray-300 bg-white px-2 py-1 disabled:opacity-40"
-        >
-          Keep mine
+        {bullet.ai !== null && (
+          <>
+            <button
+              onClick={() => dispatch({ type: "select", bulletId: bullet.id, side: "original" })}
+              disabled={bullet.selected === "original"}
+              className={button}
+            >
+              Keep mine
+            </button>
+            <button
+              onClick={() => dispatch({ type: "select", bulletId: bullet.id, side: "ai" })}
+              disabled={bullet.selected === "ai"}
+              className={button}
+            >
+              Use AI&apos;s
+            </button>
+          </>
+        )}
+        <span className="flex-1" />
+        <button onClick={onReplace} className={button}>
+          Replace
         </button>
-        <button
-          onClick={() => dispatch({ type: "select", bulletId: bullet.id, side: "ai" })}
-          disabled={bullet.selected === "ai"}
-          className="rounded border border-gray-300 bg-white px-2 py-1 disabled:opacity-40"
-        >
-          Use AI&apos;s
+        <button onClick={() => dispatch({ type: "remove", bulletId: bullet.id })} className={button}>
+          Remove
         </button>
       </div>
     </div>

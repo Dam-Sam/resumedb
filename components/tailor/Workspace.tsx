@@ -1,18 +1,28 @@
 "use client";
 
-import { useReducer } from "react";
+import { useReducer, useState } from "react";
 import { formatRange } from "@/lib/profile/sections";
 import type { TailoredItem, TailorResponse } from "@/lib/resume/types";
 import { workspaceReducer, type WorkspaceAction } from "@/lib/resume/workspace-reducer";
 import BulletRow from "./BulletRow";
 import KeySummaryPanel from "./KeySummaryPanel";
+import ReplaceDialog from "./ReplaceDialog";
 import SummaryEditor from "./SummaryEditor";
+import TableOfContents from "./TableOfContents";
 
 // Contents on the left, the resume with side-by-side bullets in the middle,
 // what the posting wants on the right.
 export default function Workspace({ data, onStartOver }: { data: TailorResponse; onStartOver: () => void }) {
   const [resume, dispatch] = useReducer(workspaceReducer, data.resume);
+  const [replacing, setReplacing] = useState<{ item: TailoredItem; bulletId: string } | null>(null);
   const { contact } = resume;
+
+  // Replace offers this item's profile bullets that aren't already showing.
+  const replaceOptions = replacing
+    ? (data.profileBulletsByItem[replacing.item.id] ?? []).filter(
+        (b) => !replacing.item.bullets.some((shown) => shown.id === b.id && !shown.removed),
+      )
+    : [];
 
   return (
     <div className="space-y-6">
@@ -26,18 +36,14 @@ export default function Workspace({ data, onStartOver }: { data: TailorResponse;
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[11rem_minmax(0,1fr)_16rem]">
-        <nav aria-label="Contents" className="text-sm">
-          <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">Contents</h2>
-          <ol className="space-y-1">
-            {resume.sections.map((s) => (
-              <li key={s.key}>
-                <a href={`#section-${s.key}`} className="block rounded px-2 py-1 hover:bg-gray-100">
-                  {s.title}
-                </a>
-              </li>
-            ))}
-          </ol>
-        </nav>
+        <div>
+          <div className="lg:sticky lg:top-6">
+            <TableOfContents
+              sections={resume.sections}
+              onMove={(from, to) => dispatch({ type: "moveSection", from, to })}
+            />
+          </div>
+        </div>
 
         <article className="space-y-8 rounded-lg border border-gray-200 bg-white p-6">
           <header>
@@ -66,7 +72,12 @@ export default function Workspace({ data, onStartOver }: { data: TailorResponse;
               {section.kind === "items" && (
                 <div className="space-y-6">
                   {section.items.map((item) => (
-                    <Item key={item.id} item={item} dispatch={dispatch} />
+                    <Item
+                      key={item.id}
+                      item={item}
+                      dispatch={dispatch}
+                      onReplace={(bulletId) => setReplacing({ item, bulletId })}
+                    />
                   ))}
                 </div>
               )}
@@ -76,11 +87,30 @@ export default function Workspace({ data, onStartOver }: { data: TailorResponse;
 
         <KeySummaryPanel keySummary={resume.keySummary} />
       </div>
+
+      {replacing && (
+        <ReplaceDialog
+          options={replaceOptions}
+          onClose={() => setReplacing(null)}
+          onPick={(bullet) => {
+            dispatch({ type: "replace", bulletId: replacing.bulletId, with: bullet });
+            setReplacing(null);
+          }}
+        />
+      )}
     </div>
   );
 }
 
-function Item({ item, dispatch }: { item: TailoredItem; dispatch: (a: WorkspaceAction) => void }) {
+function Item({
+  item,
+  dispatch,
+  onReplace,
+}: {
+  item: TailoredItem;
+  dispatch: (a: WorkspaceAction) => void;
+  onReplace: (bulletId: string) => void;
+}) {
   const dates = formatRange(item.start_date, item.end_date, item.is_current);
   return (
     <div>
@@ -96,7 +126,7 @@ function Item({ item, dispatch }: { item: TailoredItem; dispatch: (a: WorkspaceA
         {item.bullets
           .filter((b) => !b.removed)
           .map((b) => (
-            <BulletRow key={b.id} bullet={b} dispatch={dispatch} />
+            <BulletRow key={b.id} bullet={b} dispatch={dispatch} onReplace={() => onReplace(b.id)} />
           ))}
       </div>
     </div>
