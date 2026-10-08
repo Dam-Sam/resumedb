@@ -23,6 +23,8 @@ export interface TailoredItem {
   is_current: boolean;
   description: string | null;
   details: Record<string, string>;
+  // Skills used on this item, shown as the italic tech line in downloads.
+  skills: string[];
   bullets: TailoredBullet[];
 }
 

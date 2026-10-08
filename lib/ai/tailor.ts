@@ -63,6 +63,7 @@ export function assemble(profile: Profile, result: TailoringResult, input: Tailo
       is_current: item.is_current,
       description: item.description,
       details: item.details,
+      skills: item.skills,
       bullets: item.bullets.map((b) => ({
         id: b.id,
         original: b.body,

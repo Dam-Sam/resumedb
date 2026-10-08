@@ -49,7 +49,7 @@ Build mode: fast
   Learner check: Tailor again, remove a weak bullet, replace another with a different one from the same job, and drag Projects above Experience. Does the resume view match what you did?
   Commit: `Add remove, replace, and table-of-contents reordering`
 
-- [ ] **5. You can download the tailored resume as Word and PDF**
+- [x] **5. You can download the tailored resume as Word and PDF**
   Becomes usable: Word and PDF buttons produce `{FullName}_{Company}_{JobTitle}.docx` and `.pdf` that match the workspace: section order, selected/edited bullets, no removed bullets, summary only if chosen, styled from your `theme.js`.
   Why now: It completes the core journey end to end, and it depends on every workspace action already existing.
   PRD ref: `prd.md > Download`, `prd.md > The Core Journey` (step 8)
@@ -104,3 +104,4 @@ Activity mode:
 
 - Slice 1: RLS policies use `(select auth.uid())` and foreign keys on `profile_links`, `profile_summaries`, `item_skills` got indexes (Supabase performance guidance; no behavior change). `.env.example` renamed the key to `NEXT_PUBLIC_SUPABASE_ANON_KEY` to match the code and README. Migration applied to the Supabase project via MCP.
 - Slice 2: uploads failed with "permission denied" — this Supabase project doesn't grant table privileges to signed-in users automatically, so RLS never got a chance to apply. Added `0002_grants.sql` (select/insert/update/delete to `authenticated` only; anon gets nothing), applied it, and confirmed one user can write their rows while another sees none. This also fixes slice 1's returning-user routing, which silently fell back to onboarding.
+- Slice 5: tailored items now carry their skills so downloads get the italic tech-stack line from `build.js`. The PDF couldn't be rendered in a Node script (`@react-pdf` ships import-only exports `tsx` can't load), so the PDF was verified in the browser by the learner with real data instead; the Word file was verified by script (rendered, text extracted with mammoth, compared).

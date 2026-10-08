@@ -5,6 +5,7 @@ import { formatRange } from "@/lib/profile/sections";
 import type { TailoredItem, TailorResponse } from "@/lib/resume/types";
 import { workspaceReducer, type WorkspaceAction } from "@/lib/resume/workspace-reducer";
 import BulletRow from "./BulletRow";
+import DownloadButtons from "./DownloadButtons";
 import KeySummaryPanel from "./KeySummaryPanel";
 import ReplaceDialog from "./ReplaceDialog";
 import SummaryEditor from "./SummaryEditor";
@@ -26,13 +27,16 @@ export default function Workspace({ data, onStartOver }: { data: TailorResponse;
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="sticky top-0 z-10 -mx-6 flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-gray-50/95 px-6 py-3 backdrop-blur">
         <h1 className="text-xl font-semibold">
           {resume.jobTitle} <span className="font-normal text-gray-500">at {resume.company}</span>
         </h1>
-        <button onClick={onStartOver} className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm">
-          New tailoring
-        </button>
+        <div className="flex items-center gap-2">
+          <DownloadButtons resume={resume} />
+          <button onClick={onStartOver} className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm">
+            New tailoring
+          </button>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[11rem_minmax(0,1fr)_16rem]">
