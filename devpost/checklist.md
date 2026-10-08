@@ -29,7 +29,7 @@ Build mode: fast
   Learner check: Sign up as a fresh user (or clear your rows), upload your own resume with a short background, and compare the Profile page against your real resume: is anything missing, merged wrong, or invented?
   Commit: `Parse uploaded resumes into a saved profile`
 
-- [ ] **3. You can tailor your resume to a posting and compare every bullet side by side**
+- [x] **3. You can tailor your resume to a posting and compare every bullet side by side**
   Becomes usable: On `/tailor` you enter company, job title, and description, choose whether to include a summary, and submit. After a loading bar you see the workspace: items reordered by relevance, skills ranked, each original bullet beside the AI's rewrite, starting on yours, with Keep mine / Use AI's and editing of the selected side. The key-summary panel and the optional editable summary are there. A failure shows an alert with Retry.
   Why now: This is the unique kernel — the diff view and the "nothing invented" ID check. It comes as soon as there's a profile to tailor, so the early hands-on checkpoint can shape everything after it.
   PRD ref: `prd.md > Starting a Tailoring`, `prd.md > AI Reordering`, `prd.md > Bullet Comparison` (rewrite beside each bullet, starts on original, switch, edit selected), `prd.md > Key Summary Panel`, `prd.md > Tailored Summary`, `prd.md > Tailoring Workspace layout`, `prd.md > States and Boundaries` (Missing tailoring input, AI working, AI fails, Leaving the workspace)
@@ -81,7 +81,7 @@ Build mode: fast
 
 ## Hands-on Checkpoints
 
-- [ ] Early usable behavior explored — after slice 3 (the diff view with a real posting), feedback shapes slices 4–7
+- [x] Early usable behavior explored — after slice 3 (the diff view with a real posting), feedback shapes slices 4–7. Done: learner tailored to a real Stripe posting with summary on, switched and edited bullets; "the rewrites look good", no changes requested
 - [ ] Final kick-the-tires exploration and feedback completed
 
 ## Final Review

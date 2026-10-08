@@ -52,3 +52,18 @@ export const ParsedResume = z.object({
   ),
 });
 export type ParsedResume = z.infer<typeof ParsedResume>;
+
+// What Claude returns when tailoring. It only ever points at profile IDs;
+// the server builds the resume from the user's real rows (lib/ai/tailor.ts#assemble).
+export const TailoringResult = z.object({
+  keySummary: z.object({
+    skills: z.array(z.string()).describe("Key skills and technologies the posting asks for"),
+    experience: z.array(z.string()).describe("Key experience requirements"),
+    culture: z.array(z.string()).describe("Culture, values and working-style signals"),
+  }),
+  summary: z.string().nullable().describe("Tailored summary, or null if not requested"),
+  itemOrder: z.array(z.string()).describe("Every item id, most relevant to the posting first"),
+  bulletRewrites: z.array(z.object({ bulletId: z.string(), rewrite: z.string() })),
+  skillOrder: z.array(z.string()).describe("Every skill id, most relevant to the posting first"),
+});
+export type TailoringResult = z.infer<typeof TailoringResult>;
