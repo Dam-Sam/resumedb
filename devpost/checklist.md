@@ -59,7 +59,7 @@ Build mode: fast
   Learner check: Make a few choices, download both files, and open them. Do they match the screen and look like your existing resumes?
   Commit: `Export tailored resume to Word and PDF`
 
-- [ ] **6. You can fix your profile: edit, add, and remove anything**
+- [x] **6. You can fix your profile: edit, add, and remove anything**
   Becomes usable: Every field on `/profile` is editable and saves; you can add a section or entry, add/remove bullets and skills, and remove an entry. Changes survive sign-out. The unreadable-resume path now lets you enter everything by hand.
   Why now: The profile is already correct enough to tailor after slice 2; editing is the fallback and the polish, and it's mostly forms over tables already proven.
   PRD ref: `prd.md > Profile`, `prd.md > Accounts` (profile exactly as left), `prd.md > States and Boundaries` (Resume can't be read)

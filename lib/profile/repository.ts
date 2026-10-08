@@ -156,8 +156,8 @@ export async function saveParsedProfile(supabase: SupabaseClient, userId: string
 
   // Every skill named anywhere, deduplicated case-insensitively.
   const byName = new Map<string, { name: string; category: string | null }>();
-  for (const s of skills) addSkill(byName, s.name, s.category);
-  for (const it of items) for (const name of it.skills) addSkill(byName, name, null);
+  for (const s of skills) collectSkill(byName, s.name, s.category);
+  for (const it of items) for (const name of it.skills) collectSkill(byName, name, null);
 
   const skillIds = new Map<string, string>();
   if (byName.size) {
@@ -182,7 +182,7 @@ export async function saveParsedProfile(supabase: SupabaseClient, userId: string
   }
 }
 
-function addSkill(map: Map<string, { name: string; category: string | null }>, raw: string, category: string | null) {
+function collectSkill(map: Map<string, { name: string; category: string | null }>, raw: string, category: string | null) {
   const name = raw.trim();
   if (!name) return;
   const key = name.toLowerCase();
@@ -207,4 +207,110 @@ function compact(obj: Record<string, string | null>) {
 async function check(query: PromiseLike<{ error: { message: string } | null }>) {
   const { error } = await query;
   if (error) throw new Error(error.message);
+}
+
+// ---------------------------------------------------------------------------
+// Profile editing (used by app/profile/actions.ts)
+// ---------------------------------------------------------------------------
+
+export interface ContactFields {
+  full_name: string;
+  email: string | null;
+  phone: string | null;
+  location: string | null;
+}
+
+export async function updateContact(supabase: SupabaseClient, userId: string, fields: ContactFields) {
+  await check(supabase.from("contact_info").upsert({ user_id: userId, ...fields }));
+}
+
+export async function addLink(supabase: SupabaseClient, userId: string, type: string, url: string) {
+  await check(supabase.from("profile_links").insert({ user_id: userId, type, url }));
+}
+
+export async function updateLink(supabase: SupabaseClient, id: string, type: string, url: string) {
+  await check(supabase.from("profile_links").update({ type, url }).eq("id", id));
+}
+
+export async function removeLink(supabase: SupabaseClient, id: string) {
+  await check(supabase.from("profile_links").delete().eq("id", id));
+}
+
+export interface ItemFields {
+  title: string;
+  organization: string | null;
+  location: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  is_current: boolean;
+  description: string | null;
+  details: Record<string, string>;
+}
+
+export async function addItem(supabase: SupabaseClient, userId: string, type: ItemType, title: string) {
+  await check(supabase.from("profile_items").insert({ user_id: userId, type, title }));
+}
+
+export async function updateItem(supabase: SupabaseClient, id: string, fields: ItemFields) {
+  await check(supabase.from("profile_items").update(fields).eq("id", id));
+}
+
+// Bullets and skill links go with it (on delete cascade).
+export async function removeItem(supabase: SupabaseClient, id: string) {
+  await check(supabase.from("profile_items").delete().eq("id", id));
+}
+
+export async function addBullet(supabase: SupabaseClient, itemId: string, body: string) {
+  await check(supabase.from("bullets").insert({ item_id: itemId, body }));
+}
+
+export async function updateBullet(supabase: SupabaseClient, id: string, body: string) {
+  await check(supabase.from("bullets").update({ body }).eq("id", id));
+}
+
+export async function removeBullet(supabase: SupabaseClient, id: string) {
+  await check(supabase.from("bullets").delete().eq("id", id));
+}
+
+// Finds or creates the skill by name (case-insensitive) and returns its id.
+async function ensureSkill(supabase: SupabaseClient, userId: string, name: string, category: string | null = null) {
+  const { data: existing, error } = await supabase
+    .from("skills")
+    .select("id")
+    .eq("user_id", userId)
+    .ilike("name", name.replace(/[%_\\]/g, "\\$&"))
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (existing) return existing.id as string;
+  const { data, error: insertErr } = await supabase
+    .from("skills")
+    .insert({ user_id: userId, name, category })
+    .select("id")
+    .single();
+  if (insertErr) throw new Error(insertErr.message);
+  return data.id as string;
+}
+
+export async function addSkill(supabase: SupabaseClient, userId: string, name: string, category: string | null) {
+  await ensureSkill(supabase, userId, name, category);
+}
+
+export async function updateSkill(supabase: SupabaseClient, id: string, name: string, category: string | null) {
+  await check(supabase.from("skills").update({ name, category }).eq("id", id));
+}
+
+export async function removeSkill(supabase: SupabaseClient, id: string) {
+  await check(supabase.from("skills").delete().eq("id", id));
+}
+
+export async function addItemSkill(supabase: SupabaseClient, userId: string, itemId: string, name: string) {
+  const skillId = await ensureSkill(supabase, userId, name);
+  await check(
+    supabase.from("item_skills").upsert({ item_id: itemId, skill_id: skillId }, { ignoreDuplicates: true }),
+  );
+}
+
+export async function removeItemSkill(supabase: SupabaseClient, userId: string, itemId: string, name: string) {
+  const { data } = await supabase.from("skills").select("id").eq("user_id", userId).eq("name", name).maybeSingle();
+  if (data) await check(supabase.from("item_skills").delete().eq("item_id", itemId).eq("skill_id", data.id));
 }
