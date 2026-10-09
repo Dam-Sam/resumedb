@@ -20,6 +20,21 @@ Needs Node 20+.
 4. **Authentication → Sign In / Providers → Email**: leave **Confirm email** on.
 5. **Authentication → URL Configuration**: set the Site URL to `http://localhost:3000` and add `http://localhost:3000/auth/callback` to the Redirect URLs (plus your deployed URL's `/auth/callback` later).
 
+### Google sign-in
+
+1. In [Google Cloud Console](https://console.cloud.google.com), create a project, then **APIs & Services → OAuth consent screen** (External, app name ResumeDB). While it's in Testing, add yourself under **Test users**.
+2. **Credentials → Create credentials → OAuth client ID → Web application**. Authorized JavaScript origin: `http://localhost:3000`. Authorized redirect URI: `https://<your-project>.supabase.co/auth/v1/callback`.
+3. In Supabase, **Authentication → Sign In / Providers → Google**: turn it on and paste the client ID and secret.
+
+### Confirmation emails (Resend)
+
+Supabase's built-in sender is for testing only, so confirmation emails go through [Resend](https://resend.com):
+
+1. In Resend, verify a domain you own (**Domains → Add Domain**, then add the DNS records it shows at your registrar), and create an API key with sending access.
+2. In Supabase, **Authentication → Emails → SMTP Settings**: enable custom SMTP with host `smtp.resend.com`, port `465`, username `resend`, password = the Resend API key, sender `no-reply@<your domain>`, sender name `ResumeDB`.
+
+The Resend key and Google secret live only in those dashboards, never in `.env.local`.
+
 ## Environment variables
 
 | Name | What it is |

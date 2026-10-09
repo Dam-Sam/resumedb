@@ -12,7 +12,8 @@ export default async function CheckEmail({ searchParams }: PageProps<"/auth/chec
         creating your account.
       </p>
       <p className="mt-3 text-sm text-gray-600">
-        Nothing there? Check your spam folder, or send it again.
+        Nothing there? Check your spam folder, or send it again. You can also sign in with Google
+        instead.
       </p>
       {address && <ResendConfirmation email={address} />}
     </div>

@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-export default function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
+export default function AuthForm({ mode, notice }: { mode: "sign-in" | "sign-up"; notice?: string }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(notice ?? null);
   const [busy, setBusy] = useState(false);
   const router = useRouter();
   const isSignUp = mode === "sign-up";
@@ -44,9 +44,27 @@ export default function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
     }
   }
 
+  // Sends you to Google, then back to /auth/callback, which signs you in.
+  async function continueWithGoogle() {
+    setError(null);
+    const { error } = await createClient().auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+    if (error) setError(error.message);
+  }
+
   return (
     <div className="mx-auto max-w-sm px-6 py-16">
       <h1 className="text-2xl font-semibold">{isSignUp ? "Create your account" : "Sign in"}</h1>
+      <button
+        type="button"
+        onClick={continueWithGoogle}
+        className="mt-6 w-full rounded-md border border-gray-300 bg-white px-4 py-2"
+      >
+        Continue with Google
+      </button>
+      <p className="mt-6 text-center text-xs uppercase tracking-wide text-gray-400">or with email</p>
       <form onSubmit={onSubmit} className="mt-6 space-y-4">
         <label className="block text-sm">
           Email

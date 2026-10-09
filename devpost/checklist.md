@@ -69,7 +69,7 @@ Build mode: fast
   Learner check: Fix something the parser got wrong, add a project, remove an old entry, sign out and back in, and confirm it all stuck. Then tailor once more and see your fix show up.
   Commit: `Make the profile fully editable`
 
-- [ ] **7. You can sign in with Google, and confirmation emails come from Resend**
+- [x] **7. You can sign in with Google, and confirmation emails come from Resend**
   Becomes usable: "Continue with Google" works on both sign-in and sign-up, and confirmation emails are delivered through Resend.
   Why now: Mostly dashboard setup (Google Cloud, Supabase, Resend) on top of an auth flow that already works; nothing else depends on it, so it goes last.
   PRD ref: `prd.md > Accounts`
@@ -105,3 +105,4 @@ Activity mode:
 - Slice 1: RLS policies use `(select auth.uid())` and foreign keys on `profile_links`, `profile_summaries`, `item_skills` got indexes (Supabase performance guidance; no behavior change). `.env.example` renamed the key to `NEXT_PUBLIC_SUPABASE_ANON_KEY` to match the code and README. Migration applied to the Supabase project via MCP.
 - Slice 2: uploads failed with "permission denied" — this Supabase project doesn't grant table privileges to signed-in users automatically, so RLS never got a chance to apply. Added `0002_grants.sql` (select/insert/update/delete to `authenticated` only; anon gets nothing), applied it, and confirmed one user can write their rows while another sees none. This also fixes slice 1's returning-user routing, which silently fell back to onboarding.
 - Slice 5: tailored items now carry their skills so downloads get the italic tech-stack line from `build.js`. The PDF couldn't be rendered in a Node script (`@react-pdf` ships import-only exports `tsx` can't load), so the PDF was verified in the browser by the learner with real data instead; the Word file was verified by script (rendered, text extracted with mammoth, compared).
+- Slice 7: also added a message on Sign in when `/auth/callback` fails (it previously redirected with `?error=link` silently). Resend uses the learner's own domain, already verified in their Resend account for another project, so no new DNS records were needed. The unreadable-resume path was never run end to end with a real upload (only its parts: blank-PDF detection, banner rendering); left for the final review.
