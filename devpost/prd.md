@@ -151,6 +151,7 @@ Source: `scope.md > The Core Loop` step 6.
 - **Landing page animations.** A static steps page proves the idea; the animations are polish.
 
 ## Possible Later Enhancements
+- **Bolder, job-aimed rewrites (from final review).** Rewrites lead with what the posting values and use its vocabulary; where the posting requires a tool the user hasn't used, a rewrite may bridge from a genuinely equivalent tool they did use ("Talend, comparable to Informatica"), never claiming the posting's tool, with bridged bullets tagged in the comparison view.
 - **Cover letter generation** using the same background info.
 - **Application tracker** with company, role, date, status, timeline and the resume used.
 - **Dashboard** with counts by stage and a ribbon chart.

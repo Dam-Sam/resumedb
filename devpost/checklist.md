@@ -88,6 +88,9 @@ Build mode: fast
 
 - [ ] Final review complete — feedback resolved and learner confirms ready to ship
 
+Final-review feedback:
+- AI rewrites felt too close to the originals, making the feature seem redundant. Measured in `llm_runs`: 7–8 of 20 rewrites identical per run, the rest light grammar edits at ~1.0× length. Causes: `tailor-v1` prompt allows identical rewrites and stresses caution; it never says how to aim a bullet; the learner's bullets were already hand-tailored. Learner's target: reframe toward what the job values and the tools it asks for, including truthful "comparable to [posting tool]" bridges from a genuinely equivalent tool they used, with bridged bullets tagged in the diff view. **Decision: keep the current behavior for the PoC; deferred as a later enhancement.**
+
 ## Code Tour and App Map
 
 - [ ] Learning activity complete — guided route, focused alternative, prior practice connected, or brief recap
