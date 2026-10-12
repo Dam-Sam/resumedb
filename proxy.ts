@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { homeFor } from "@/lib/supabase/routing";
 
-const PROTECTED = ["/profile", "/tailor", "/onboarding"];
+const PROTECTED = ["/profile", "/tailor", "/applications", "/onboarding"];
 const SIGNED_OUT_ONLY = ["/", "/sign-in", "/sign-up"];
 
 // Runs before every page: refreshes the session cookie and sends people

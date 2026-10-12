@@ -21,6 +21,9 @@ export default async function Nav() {
             <Link href="/tailor" className="text-gray-600 hover:text-gray-900">
               Tailoring
             </Link>
+            <Link href="/applications" className="text-gray-600 hover:text-gray-900">
+              Tracker
+            </Link>
             <form action="/auth/sign-out" method="post" className="ml-auto">
               <button className="text-gray-600 hover:text-gray-900">Sign out</button>
             </form>

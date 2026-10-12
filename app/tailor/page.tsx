@@ -15,7 +15,7 @@ type View =
 
 const EMPTY: TailorInput = { company: "", jobTitle: "", jobDescription: "", includeSummary: false };
 
-// The form, then the workspace. Nothing here is saved: leaving the page drops it.
+// The form, then the workspace. The workspace isn't saved; downloads go to the Tracker.
 export default function Tailor() {
   const [input, setInput] = useState<TailorInput>(EMPTY);
   const [view, setView] = useState<View>({ kind: "form" });
@@ -41,7 +41,11 @@ export default function Tailor() {
   if (view.kind === "workspace") {
     return (
       <div className="mx-auto max-w-7xl px-6 py-8">
-        <Workspace data={view.data} onStartOver={() => setView({ kind: "form" })} />
+        <Workspace
+          data={view.data}
+          jobDescription={input.jobDescription}
+          onStartOver={() => setView({ kind: "form" })}
+        />
       </div>
     );
   }

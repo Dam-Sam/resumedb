@@ -18,8 +18,9 @@ Source: `scope.md > The Core Loop`, `scope.md > What "Working" Looks Like`.
 5. **Start a tailoring.** On the **Tailoring** tab they enter the company name and job title, paste the job description, and choose whether the AI should also write a tailored summary. Then they submit.
 6. **Review in the workspace.** They see their resume reordered by the AI, with the most relevant experience and projects first and skills sorted by relevance. Every bullet has the AI's rewrite beside it. A table of contents shows the section order, and a key-summary panel shows what the posting is asking for.
 7. **Make choices.** For each bullet they keep their own wording or take the AI's, edit whichever one is selected, remove the bullet, or replace it with another bullet from the same job or project. They can drag sections in the table of contents to reorder the resume.
-8. **Download.** They download the tailored resume as Word and PDF.
-9. **Come back.** On their next visit they sign in, and their profile is already there. They go straight to step 5 for the next job.
+8. **Download.** They download the tailored resume as Word and PDF. The download saves the application to their **Tracker**.
+9. **Track it.** On the **Tracker** tab they see every application and move each one through its stages as they hear back.
+10. **Come back.** On their next visit they sign in, and their profile and applications are already there. They go straight to step 5 for the next job.
 
 **Success:** a user starts from their own generic resume, goes through the steps with a real job posting, and downloads a resume that is reordered and reworded for that posting, with only the changes they chose.
 
@@ -33,8 +34,10 @@ Source: `scope.md > The Core Loop`, `scope.md > What "Working" Looks Like`.
 | **Profile tab** | The full editable profile: personal info (with background blurb), experience, projects, skills, etc. | After onboarding; from the main navigation |
 | **Tailoring tab** | Form for company name, job title and job description, plus a "Include a tailored summary" choice | From the main navigation |
 | **Tailoring Workspace** | Table of contents, the resume with side-by-side bullets, key-summary panel, download buttons | After submitting the Tailoring form |
+| **Tracker tab** | Table of applications: company, role, date applied, status | From the main navigation |
+| **Application detail** | Status picker, dated status timeline, job description, the frozen resume, re-download buttons | Clicking a row on the Tracker |
 
-Signed-in users move between **Profile** and **Tailoring** using the main navigation.
+Signed-in users move between **Profile**, **Tailoring** and **Tracker** using the main navigation.
 
 ### Tailoring Workspace layout
 - **Center / main area, left column:** the user's resume in the AI's order, showing their original bullets.
@@ -111,13 +114,23 @@ Source: `scope.md > The Core Loop` step 6.
 - [ ] The user can download the tailored resume as **Word** and as **PDF**.
 - [ ] The downloaded file matches the workspace: section order, the selected/edited bullets, no removed bullets, and the summary only if it was chosen.
 
+### Application Tracker
+Source: learner request after the PoC worked (see `checklist.md > Revisions`).
+- [ ] The first download (Word or PDF) in a tailoring saves an application: company, job title, job description, and a frozen copy of exactly the resume downloaded. It starts as **Applied**, dated the day of that download.
+- [ ] Downloading again in the same tailoring, after changes, overwrites that application's frozen resume instead of creating a second application. **New tailoring** starts a new one.
+- [ ] The **Tracker** tab lists every application, newest first, with company, role, date applied and status.
+- [ ] Clicking an application opens its detail: job description, the frozen resume (read-only), and Word/PDF re-download buttons that produce the same file.
+- [ ] Status moves through **Applied → Received → Screening → Interview → Offer / Rejected**; each change is saved and added to a dated timeline.
+
 ## States and Boundaries
 - **First use:** a new account goes through Onboarding before anything else.
 - **Returning user:** signs in, lands on the Tailoring tab, and finds the profile already saved; doesn't onboard again.
 - **Resume can't be read** (scanned image, unusual layout): the user sees a message that the resume couldn't be read and is taken to the Profile tab to enter their information manually.
 - **Missing tailoring input:** the form can't be submitted without company name, job title and job description.
 - **Replace with no alternatives:** if that item has no other bullets, the popup says so.
-- **Leaving the workspace:** tailoring work isn't saved. Once you leave, it's gone, except for whatever you downloaded. Saving tailored versions belongs to the future tracker.
+- **Leaving the workspace:** the workspace itself isn't saved. What you downloaded is saved to the Tracker as a frozen copy; undownloaded choices are gone. Reloading mid-tailoring loses the workspace, so the next download starts a new application.
+- **Empty tracker:** a message points to Tailoring, since applications come from downloads.
+- **Tracker save fails:** the file still downloads, and a message says it couldn't be saved to the Tracker.
 - **AI working:** while the AI is processing (reordering, rewriting, extracting the key summary), the user sees a loading bar.
 - **AI fails:** the user sees an alert saying something went wrong, with a **Retry** button that runs the tailoring again with the same inputs.
 
@@ -135,6 +148,7 @@ Source: `scope.md > The Core Loop` step 6.
 - **The landing page stays, but static.** Click-through animations are cut from the PoC.
 - **AI waits show a loading bar, and failures show an alert with Retry.** The user is never left guessing.
 - **The layout and state assumptions were confirmed by the learner:** table of contents on the far left, editable summary, returning users land on Tailoring, all three tailoring fields required, workspace not saved.
+- **The tracker saves on download, a frozen copy, overwritten by later downloads in the same tailoring** (learner choice). The date applied is the first download; status changes are dated when made.
 
 ## What We're Building
 - Static landing page explaining the steps
@@ -144,16 +158,17 @@ Source: `scope.md > The Core Loop` step 6.
 - Tailoring tab: company, job title, job description, summary choice
 - Tailoring Workspace: AI reordering, side-by-side bullet rewrites with keep/AI/edit/remove/replace, draggable table of contents, key-summary panel, optional tailored summary
 - Download as Word and PDF
+- Application tracker: saved on download (overwritten on re-download), table of applications, detail with frozen resume, status stages and dated timeline
 
 ## Deferred From the POC
-- **Saving tailored versions / the application tracker.** The learner wants tailored versions saved in a tracker later. For now the downloaded file is the only record.
+- **Reopening a saved tailoring to keep editing.** The tracker keeps a frozen copy of what was downloaded, by learner choice; editable saved workspaces stay out.
+- **Notes on the timeline, manual applications without tailoring, cover letters, dashboard.** Out for now (learner decision).
 - **Real visual design.** It comes from Claude Design after the PoC works.
 - **Landing page animations.** A static steps page proves the idea; the animations are polish.
 
 ## Possible Later Enhancements
 - **Bolder, job-aimed rewrites (from final review).** Rewrites lead with what the posting values and use its vocabulary; where the posting requires a tool the user hasn't used, a rewrite may bridge from a genuinely equivalent tool they did use ("Talend, comparable to Informatica"), never claiming the posting's tool, with bridged bullets tagged in the comparison view.
 - **Cover letter generation** using the same background info.
-- **Application tracker** with company, role, date, status, timeline and the resume used.
 - **Dashboard** with counts by stage and a ribbon chart.
 
 ## Non-Goals

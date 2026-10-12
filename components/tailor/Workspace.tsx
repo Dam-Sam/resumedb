@@ -13,7 +13,15 @@ import TableOfContents from "./TableOfContents";
 
 // Contents on the left, the resume with side-by-side bullets in the middle,
 // what the posting wants on the right.
-export default function Workspace({ data, onStartOver }: { data: TailorResponse; onStartOver: () => void }) {
+export default function Workspace({
+  data,
+  jobDescription,
+  onStartOver,
+}: {
+  data: TailorResponse;
+  jobDescription: string;
+  onStartOver: () => void;
+}) {
   const [resume, dispatch] = useReducer(workspaceReducer, data.resume);
   const [replacing, setReplacing] = useState<{ item: TailoredItem; bulletId: string } | null>(null);
   const { contact } = resume;
@@ -32,7 +40,7 @@ export default function Workspace({ data, onStartOver }: { data: TailorResponse;
           {resume.jobTitle} <span className="font-normal text-gray-500">at {resume.company}</span>
         </h1>
         <div className="flex items-center gap-2">
-          <DownloadButtons resume={resume} />
+          <DownloadButtons resume={resume} jobDescription={jobDescription} />
           <button onClick={onStartOver} className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm">
             New tailoring
           </button>

@@ -79,9 +79,30 @@ Build mode: fast
   Learner check: Sign in with Google as a new user and confirm you land on onboarding; sign up a second email and confirm the confirmation email arrives from ResumeDB.
   Commit: `Add Google sign-in and Resend confirmation emails`
 
+- [x] **8. Downloads save to your tracker**
+  Becomes usable: The first Word or PDF download in a tailoring saves an application (company, role, job description, frozen resume) as Applied, dated today. Downloading again after edits overwrites the same application; New tailoring starts a new one. A **Tracker** tab lists every application with company, role, date applied and status.
+  Why now: Saving is the heart of the tracker, and the table proves it end to end; the detail page needs saved applications to exist.
+  PRD ref: `prd.md > Application Tracker` (first three criteria), `prd.md > States and Boundaries` (Leaving the workspace, Empty tracker, Tracker save fails)
+  Spec ref: `spec.md > Components` (Application Tracker), `spec.md > Data Model`, `spec.md > File Structure`
+  Build: `supabase/migrations/0003_tracker.sql` (`applications`, `application_events`, status-event trigger, RLS, grants) applied via MCP; `lib/applications/repository.ts`; `app/applications/actions.ts` (`saveApplication`); shared file builder for Word/PDF; `DownloadButtons` saves after building the file and keeps the application ID; `/applications` table page; Tracker nav link; `proxy.ts` protects `/applications`.
+  Verify (mechanical): `npm run build` and lint pass; migration applies, both tables show RLS; an SQL impersonation test shows a user sees only their own applications and events, creating an application writes one `applied` event; in the browser (with `/api/tailor` stubbed), first download creates one row, a second download after an edit updates the same row's resume, and `/applications` lists it; signed-out `/applications` redirects to `/sign-in`.
+  Learner check: Tailor to a posting, download Word, change a bullet, download PDF, then open Tracker: one row with the right company, role, today's date and Applied.
+  Commit: `Save downloaded resumes to an application tracker`
+
+- [ ] **9. Application detail and status timeline**
+  Becomes usable: Clicking a Tracker row opens the application: the job description, the frozen resume (read-only), Word/PDF re-download, and a status picker (Applied → Received → Screening → Interview → Offer / Rejected). Each change saves and adds a dated entry to the timeline; the table shows the new status.
+  Why now: It builds on the saved applications from slice 8.
+  PRD ref: `prd.md > Application Tracker` (last two criteria)
+  Spec ref: `spec.md > Components` (Application Tracker), `spec.md > Data Model`
+  Build: `/applications/[id]` server page; `setStatus` action; `StatusPicker`, `Timeline`, `FrozenResume`, re-download buttons reusing the shared file builder; rows on `/applications` link to it; unknown or someone else's ID shows not-found.
+  Verify (mechanical): `npm run build` and lint pass; in the browser, changing the status twice adds two timeline entries in order and updates the table; SQL shows matching `application_events` rows; re-downloaded Word text (extracted with mammoth) matches the frozen resume; another user's application ID returns not-found.
+  Learner check: Open the application from slice 8, move it to Received then Screening, check the timeline and the table, and re-download the PDF to confirm it's the resume you sent.
+  Commit: `Add application detail with status timeline`
+
 ## Hands-on Checkpoints
 
 - [x] Early usable behavior explored — after slice 3 (the diff view with a real posting), feedback shapes slices 4–7. Done: learner tailored to a real Stripe posting with summary on, switched and edited bullets; "the rewrites look good", no changes requested
+- [ ] Tracker checkpoint — after slice 9, learner runs both learner checks for slices 8–9 and gives feedback
 - [ ] Final kick-the-tires exploration and feedback completed
 
 ## Final Review
@@ -109,3 +130,5 @@ Activity mode:
 - Slice 2: uploads failed with "permission denied" — this Supabase project doesn't grant table privileges to signed-in users automatically, so RLS never got a chance to apply. Added `0002_grants.sql` (select/insert/update/delete to `authenticated` only; anon gets nothing), applied it, and confirmed one user can write their rows while another sees none. This also fixes slice 1's returning-user routing, which silently fell back to onboarding.
 - Slice 5: tailored items now carry their skills so downloads get the italic tech-stack line from `build.js`. The PDF couldn't be rendered in a Node script (`@react-pdf` ships import-only exports `tsx` can't load), so the PDF was verified in the browser by the learner with real data instead; the Word file was verified by script (rendered, text extracted with mammoth, compared).
 - Slice 7: also added a message on Sign in when `/auth/callback` fails (it previously redirected with `?error=link` silently). Resend uses the learner's own domain, already verified in their Resend account for another project, so no new DNS records were needed. The unreadable-resume path was never run end to end with a real upload (only its parts: blank-PDF detection, banner rendering); left for the final review.
+- Tracker added after the PoC was working (learner request; PoC tagged `v1-poc` first). Scope, PRD and spec updated; slices 8–9 added. Learner choices: save on download, re-download overwrites the same application, frozen copy of what was downloaded, stages Applied → Received → Screening → Interview → Offer / Rejected, dated timeline without notes; cover letter, dashboard and email stay out. The deferred `jobs`/`resumes*` tables are replaced by `applications` (frozen `FinalResume` as JSON) and `application_events` (written by a trigger), agreed with the learner.
+- Slice 8: `resumeFileName` now takes name/company/title so the tracker can name re-downloads from the frozen copy; Word/PDF generation moved to `lib/resume/files.tsx` to be shared. The application is saved only after the file is created. Verified with `/api/tailor` stubbed in the browser and downloads intercepted (no files written); two `TrackerTestCo` test applications were left in the learner's account for slice 9 testing.

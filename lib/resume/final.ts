@@ -78,8 +78,8 @@ export function buildFinalResume(state: TailoredResume): FinalResume {
 }
 
 // {FullName}_{Company}_{JobTitle}, letters and digits only within each part.
-export function resumeFileName(state: TailoredResume, ext: "docx" | "pdf") {
+export function resumeFileName(name: string, company: string, jobTitle: string, ext: "docx" | "pdf") {
   const part = (s: string) => s.replace(/[^\p{L}\p{N}]+/gu, "");
-  const parts = [state.contact?.full_name || "Resume", state.company, state.jobTitle].map(part).filter(Boolean);
+  const parts = [name || "Resume", company, jobTitle].map(part).filter(Boolean);
   return `${parts.join("_")}.${ext}`;
 }

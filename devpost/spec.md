@@ -24,7 +24,7 @@ ResumeDB is one **Next.js** app. Some of its code runs in your browser: the page
 - **Download:** the browser turns the in-memory tailored resume into a Word file (with the `docx` library, ported from your `build.js` and `theme.js`) and a PDF (with `@react-pdf/renderer`). Both are built from the same data, so they match the screen.
 - **Every LLM call is logged** to an `llm_runs` table: the model, the prompt version, the raw response, the parsed result, any error, tokens, and timing. You can open Supabase and see exactly what Claude said.
 
-Why this shape: one app with one deploy, and one outside service besides Claude. No saved tailoring yet, so no extra tables or sync logic. The heavy work happens in exactly two server routes, so when something goes wrong there are only two places to look.
+Why this shape: one app with one deploy, and one outside service besides Claude. Tailorings themselves aren't saved; only what you download is, as a frozen copy in the tracker, so there's no sync logic. The heavy work happens in exactly two server routes, so when something goes wrong there are only two places to look.
 
 ## The Core Journey Through the System
 PRD ref: `prd.md > The Core Journey`.
@@ -127,7 +127,7 @@ Carried from `prd.md > Look and Feel` and `scope.md > Inspiration & Identity`.
   - `/auth/callback` exchanges the code (from the email link or from Google) for a session. It routes to `/onboarding` if no `contact_info` row exists, otherwise to `/tailor`.
 - **What `proxy.ts` does:**
   - refreshes the session cookie
-  - sends signed-out visitors on `/profile`, `/tailor`, or `/onboarding` to `/sign-in`
+  - sends signed-out visitors on `/profile`, `/tailor`, `/applications`, or `/onboarding` to `/sign-in`
   - sends signed-in users on `/` or `/sign-in` to `/tailor`
 - **Sign out:** a nav button.
 
@@ -230,6 +230,12 @@ The workspace view of `app/tailor/page.tsx` holds the `TailoredResume` in a `use
 There's no persistence: leaving the page drops the state, as the PRD intends.
 PRD ref: `prd.md > Bullet Comparison`, `prd.md > Table of Contents`, `prd.md > Key Summary Panel`, `prd.md > Tailored Summary`, `prd.md > Tailoring Workspace layout`, `prd.md > States and Boundaries` (AI working, AI fails, Replace with no alternatives, Leaving the workspace).
 
+### Application Tracker
+- **Saving:** `DownloadButtons` builds the `FinalResume`, generates the file, and calls the `saveApplication` server action (`app/applications/actions.ts`) with company, job title, job description and the `FinalResume`. With no ID yet it inserts and returns the new ID, which the workspace keeps; with an ID it overwrites `resume`. A failed save still downloads the file and shows "Downloaded, but couldn't save to your Tracker."
+- **`/applications`** (server page): table of applications, newest `applied_at` first; each row links to the detail.
+- **`/applications/[id]`** (server page): status `<select>` (`setStatus` action), the timeline from `application_events`, the job description, a read-only render of the frozen resume, and re-download buttons that rebuild Word/PDF from the stored `FinalResume`.
+- **`lib/applications/repository.ts`**: `createApplication`, `overwriteResume`, `listApplications`, `getApplication`, `setStatus`.
+
 ### Resume Export
 - **`lib/resume/final.ts#buildFinalResume(state, contact, links)`:** turns workspace state into a plain `FinalResume`:
   - sections in table-of-contents order
@@ -255,7 +261,11 @@ The migration lives in `supabase/migrations/0001_profile.sql`. It's the learner'
   - add `created_at` and `updated_at` (the existing trigger needs `updated_at`, and without it every update would fail)
   - add a partial unique index `on profile_summaries (user_id) where kind = 'background'`, so each user has one background
 - **`llm_runs` kept**, without the `job_id` and `resume_id` columns and their foreign keys (those tables don't exist yet). `purpose` is `'parse'` or `'tailor'`.
-- **Deferred to the tracker:** `jobs`, `resumes`, `resume_sections`, `resume_entries`, `resume_entry_bullets`, and `resume_skills` are not created. A later migration adds them.
+- **Not built:** `jobs`, `resumes`, `resume_sections`, `resume_entries`, `resume_entry_bullets`, and `resume_skills`. They modelled editable saved tailorings; the tracker stores a frozen copy instead (learner choice), so they were replaced by the two tables below.
+- **Tracker tables** (`supabase/migrations/0003_tracker.sql`):
+  - `applications`: `user_id`, `company`, `job_title`, `job_description`, `status` (`applied`, `received`, `screening`, `interview`, `offer`, `rejected`; default `applied`), `resume jsonb` (the `FinalResume` exactly as downloaded), `applied_at` (first download), `created_at`, `updated_at`.
+  - `application_events`: `application_id`, `user_id`, `status`, `created_at`. One row per status, written by a database trigger whenever an application is created or its status changes, so the timeline can't miss a change.
+  - RLS: `applications` uses the own-rows policy; `application_events` checks that the application belongs to you. Both are granted to `authenticated` (`select, insert, update, delete` on applications; `select, insert` on events, since the trigger runs as the user).
 - **RLS is enabled on every table:**
   - Tables with `user_id`: a policy `using (user_id = auth.uid()) with check (user_id = auth.uid())`.
   - `bullets` and `item_skills`: a policy checking `exists (select 1 from profile_items i where i.id = item_id and i.user_id = auth.uid())`.
@@ -270,6 +280,7 @@ The migration lives in `supabase/migrations/0001_profile.sql`. It's the learner'
 | LLM logs | `llm_runs` | Appended on every parse and tailor call | Kept, visible in Supabase |
 | Tailoring form inputs | React state on `/tailor` | Typing | Gone |
 | Workspace (`TailoredResume`) | React state on `/tailor` | Reducer actions | Gone, by design |
+| Applications + timeline | `applications`, `application_events` | Created on first download, resume overwritten on re-download; status from the detail page | Exactly as left |
 | Downloaded files | Your computer | Download buttons | Yours |
 
 ## File Structure
@@ -289,6 +300,10 @@ resumedb/
 │   │   ├── page.tsx               # Loads profile (server), renders editors
 │   │   └── actions.ts             # Server actions: update/add/remove contact, items, bullets, skills, background
 │   ├── tailor/page.tsx            # "use client": form view ⇄ workspace view
+│   ├── applications/
+│   │   ├── page.tsx               # Tracker table
+│   │   ├── [id]/page.tsx          # Detail: status, timeline, job description, frozen resume
+│   │   └── actions.ts             # saveApplication, setStatus
 │   └── api/
 │       ├── parse-resume/route.ts  # Extract text → LLM → save profile
 │       └── tailor/route.ts        # Load profile → LLM → validate → TailoredResume
@@ -325,7 +340,7 @@ resumedb/
 │   │   └── pdf.tsx                # FinalResume → .pdf
 │   └── extract-text.ts            # PDF (unpdf) / Word (mammoth) → plain text
 ├── proxy.ts                       # Session refresh + route protection (middleware.ts on older Next)
-├── supabase/migrations/0001_profile.sql   # Schema + RLS
+├── supabase/migrations/            # 0001 profile schema + RLS, 0002 grants, 0003 tracker
 ├── .env.example
 ├── package.json
 ├── README.md                      # Setup, env vars, how to run
@@ -385,7 +400,8 @@ resumedb/
 
 ## What Was Simplified and Why
 
-- **The workspace lives in browser memory** instead of being saved to `resumes*` tables. The PRD says tailorings aren't saved, and the tracker will add those tables later.
+- **The workspace lives in browser memory** instead of being saved to `resumes*` tables. Only the downloaded result is saved, as one JSON value per application: it's frozen by design, so it never needs to stay in sync with the profile.
+- **The overwrite link is held in browser memory.** The workspace remembers its application ID; reloading loses it, so the next download creates a new application.
 - **The AI returns IDs and rewrites, and the server assembles the resume** instead of having the AI write the whole resume. That keeps the output grounded and makes the diff possible, because every rewrite maps to exactly one real bullet.
 - **Text extraction before the LLM** instead of sending PDF files to Claude directly. This keeps `LLMProvider` text-only, so any future provider works. The cost is that scanned or image-only PDFs aren't supported; they fall back to manual entry.
 - **One combined tailoring call** instead of separate calls for reordering, rewrites, key summary, and summary. One loading bar, one retry, one log row. If quality suffers on long resumes, splitting it is a contained change inside `lib/ai/tailor.ts`.
@@ -397,7 +413,7 @@ resumedb/
 
 **Learner decisions (this session):**
 - **Framework:** Next.js + TypeScript.
-- **Schema:** the learner's own. Profile tables now, `llm_runs` kept for inspecting AI output, `jobs` and `resumes*` deferred.
+- **Schema:** the learner's own. Profile tables now, `llm_runs` kept for inspecting AI output, `jobs` and `resumes*` replaced by `applications` + `application_events` when the tracker was added (frozen copy, learner choice).
 - **Background:** stored in `profile_summaries` with a `kind` column.
 - **LLM:** abstracted behind `LLMProvider`, with Claude as the only implementation.
 - **Downloads:** Word via `docx` (reusing `build.js` / `theme.js`), PDF via `@react-pdf/renderer`.
