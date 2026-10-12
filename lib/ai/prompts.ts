@@ -23,7 +23,17 @@ export function parsePrompt(resumeText: string) {
 
 export const TAILOR_PROMPT_VERSION = "tailor-v1";
 
-export const TAILOR_SYSTEM = `You tailor a person's resume to one job posting. You market them to the job while staying strictly grounded in what they actually did.
+// ---------------------------------------------------------------------------
+// Your own tailoring instructions. Write them between the backticks; they're
+// added to the end of TAILOR_SYSTEM below under "Additional instructions".
+// Leave it empty to use TAILOR_SYSTEM unchanged.
+// When you change this, bump TAILOR_PROMPT_VERSION (e.g. "tailor-v2") so
+// llm_runs shows which runs used your new wording.
+// ---------------------------------------------------------------------------
+export const TAILOR_EXTRA_INSTRUCTIONS = `
+`;
+
+const TAILOR_BASE = `You tailor a person's resume to one job posting. You market them to the job while staying strictly grounded in what they actually did.
 
 You get their profile: items (jobs, projects, education...) with IDs, each item's bullets with IDs, their skills with IDs, and a short background they wrote about themselves. Then you get the posting.
 
@@ -39,6 +49,10 @@ Return:
 5. summary: only when asked. 2–3 sentences in the first-person-implied resume style (no "I"), written from their background and real experience, aimed at this role and the culture signals in the posting. It may only use facts from the profile. When not asked, null.
 
 Use only IDs that appear in the profile. Copy them exactly.`;
+
+export const TAILOR_SYSTEM = TAILOR_EXTRA_INSTRUCTIONS.trim()
+  ? `${TAILOR_BASE}\n\nAdditional instructions:\n${TAILOR_EXTRA_INSTRUCTIONS.trim()}`
+  : TAILOR_BASE;
 
 export function tailorPrompt(input: {
   profileText: string;
