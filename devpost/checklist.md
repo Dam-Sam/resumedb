@@ -102,7 +102,7 @@ Build mode: fast
 ## Hands-on Checkpoints
 
 - [x] Early usable behavior explored — after slice 3 (the diff view with a real posting), feedback shapes slices 4–7. Done: learner tailored to a real Stripe posting with summary on, switched and edited bullets; "the rewrites look good", no changes requested
-- [ ] Tracker checkpoint — after slice 9, learner runs both learner checks for slices 8–9 and gives feedback
+- [x] Tracker checkpoint — after slice 9, learner runs both learner checks for slices 8–9 and gives feedback. Done: learner ran the whole flow with a real application; worked properly, no changes requested
 - [ ] Final kick-the-tires exploration and feedback completed
 
 ## Final Review

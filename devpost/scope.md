@@ -43,13 +43,12 @@ The user starts with their own generic resume, goes through the app with a job p
 - Side-by-side bullet rewrites with a per-bullet keep-mine / keep-AI's choice
 - Toggle for a culture-fit summary at the top of the resume
 - Download the tailored resume as Word and PDF
+- Draggable table of contents and a job-posting key-summary panel (moved in from Later during the PRD)
 - Application tracker (added after the PoC worked): every download saves the application (company, role, date applied, status, job description, a frozen copy of the resume), with a dated status timeline
 
 ## Later
 - Cover letter generation (uses the same background info)
 - Dashboard (counts by stage, ribbon chart)
-- Manual drag-and-drop reordering of sections, plus a draggable table of contents
-- Extracted job-posting key details/skills panel
 
 ## Explicitly Cut
 - **Email integration / auto status updates:** needs email OAuth and message classification. That's a separate product and far beyond 2–4 hours.
