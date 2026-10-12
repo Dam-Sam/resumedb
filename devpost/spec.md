@@ -193,7 +193,7 @@ PRD ref: supports `prd.md > AI Reordering`, `prd.md > Bullet Comparison`, `prd.m
 **Steps:**
 1. **Load** the profile through the repository.
 2. **Serialize** it with `lib/profile/serialize.ts`: items with `id`, type, title, org, and dates; bullets with `id` and text; skills with `id`, name, and category; plus the background. Name, email, phone, and links are **never** included.
-3. **Prompt** with `lib/ai/prompts.ts` (`TAILOR_PROMPT_VERSION = 'tailor-v1'`):
+3. **Prompt** with `lib/ai/prompts/tailor.ts` (`VERSION = 'tailor-v1'`):
    - rank items within each section by relevance
    - rewrite each bullet for the posting while describing the same real work, with no new numbers, tools, or claims
    - rank skills
@@ -325,7 +325,7 @@ resumedb/
 │   │   └── log.ts                 # withRunLog → llm_runs
 │   ├── ai/
 │   │   ├── schemas.ts             # zod: ParsedResume, TailoringResult
-│   │   ├── prompts.ts             # Prompt text + version strings
+│   │   ├── prompts/               # One file per prompt (parse.ts, tailor.ts): VERSION, SYSTEM, userMessage()
 │   │   ├── parse-resume.ts        # text → ParsedResume
 │   │   └── tailor.ts              # profile + job → TailoringResult → assemble() → TailoredResume
 │   ├── profile/

@@ -11,7 +11,7 @@ import type {
   TailorInput,
   TailorResponse,
 } from "@/lib/resume/types";
-import { TAILOR_PROMPT_VERSION, TAILOR_SYSTEM, tailorPrompt } from "./prompts";
+import * as tailorPrompt from "./prompts/tailor";
 import { TailoringResult } from "./schemas";
 
 // Profile + posting → Claude → validated TailoredResume.
@@ -21,12 +21,12 @@ export async function tailor(
   profile: Profile,
   input: TailorInput,
 ): Promise<TailorResponse> {
-  const prompt = tailorPrompt({ profileText: serializeProfile(profile), ...input });
+  const prompt = tailorPrompt.userMessage({ profileText: serializeProfile(profile), ...input });
   const { data } = await withRunLog(
     supabase,
     userId,
-    { purpose: "tailor", promptVersion: TAILOR_PROMPT_VERSION, input: TAILOR_SYSTEM + prompt },
-    () => getLLM().generateObject({ system: TAILOR_SYSTEM, prompt, schema: TailoringResult }),
+    { purpose: "tailor", promptVersion: tailorPrompt.VERSION, input: tailorPrompt.SYSTEM + prompt },
+    () => getLLM().generateObject({ system: tailorPrompt.SYSTEM, prompt, schema: TailoringResult }),
   );
 
   return {
