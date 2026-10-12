@@ -99,6 +99,16 @@ Build mode: fast
   Learner check: Open the application from slice 8, move it to Received then Screening, check the timeline and the table, and re-download the PDF to confirm it's the resume you sent.
   Commit: `Add application detail with status timeline`
 
+- [x] **10. Prompts live in Supabase, versioned, switchable without a redeploy**
+  Becomes usable: The parse and tailor system prompts are read from a `prompts` table. You add a new version in the Supabase dashboard and switch with `select activate_prompt('tailor', 2)`; the next AI call uses it, no redeploy. Each `llm_runs` row records the exact prompt row used.
+  Why now: The learner wants to iterate on the tailor prompt (bolder rewrites) without redeploying, and keep every version.
+  PRD ref: `prd.md > Possible Later Enhancements` (Bolder, job-aimed rewrites, which this enables)
+  Spec ref: `spec.md > Components` (Prompts (stored in Supabase), LLM Provider Layer), `spec.md > Data Model`
+  Build: `supabase/migrations/0004_prompts.sql` (`prompts` table, one-active index, freeze trigger, `activate_prompt()`, read-only RLS, `llm_runs.prompt_id`, v1 seeds); `lib/ai/prompts.ts` (`getActivePrompt`); `lib/ai/messages.ts`; callers and `withRunLog` pass the prompt id and label; `lib/ai/prompts/` folder removed; README how-to.
+  Verify (mechanical): build and lint pass; seeded text has the same md5 as the code prompts; rolled-back SQL test shows edits blocked, notes editable, activate/rollback switch exactly one live version, activating a missing version fails without changing anything, signed-in users can read but not insert or activate; `getActivePrompt` throws on no row / DB error (script with a stand-in client); a real `/api/tailor` call succeeds and its `llm_runs` row links to `tailor` v1 with label `tailor-v1`.
+  Learner check: In the Supabase Table Editor, open `prompts` and find both v1 rows; tailor once and see the new `llm_runs` row's `prompt_id` / `prompt_version`.
+  Commit: `Store prompts in Supabase with versions`
+
 ## Hands-on Checkpoints
 
 - [x] Early usable behavior explored — after slice 3 (the diff view with a real posting), feedback shapes slices 4–7. Done: learner tailored to a real Stripe posting with summary on, switched and edited bullets; "the rewrites look good", no changes requested
@@ -135,3 +145,4 @@ Activity mode:
 - Slice 9: the re-download check rebuilt the Word file from the stored `FinalResume` in a script (same `buildDocx` the browser uses) and compared its text, since browser downloads were intercepted rather than saved. The status picker keeps its own value while saving so it doesn't jump back.
 - After slice 9 (learner request): prompts moved from `lib/ai/prompts.ts` into `lib/ai/prompts/`, one file per prompt (`parse.ts`, `tailor.ts`), each with its own `VERSION`, `SYSTEM` and `userMessage()`. Text checked byte-identical to the originals by script; versions unchanged.
 - Then (learner request) each prompt became a folder with one file per version: `parse/v1.ts`, `tailor/v1.ts`, `tailor/v2.ts` (a copy of v1 labelled `tailor-v2`, for the learner to edit), and an `index.ts` per prompt that selects the live version (both still v1). Used versions are never edited, so old prompts stay runnable and `llm_runs` labels stay accurate.
+- Slice 10 (learner request, replaces the per-file prompt versions): prompts moved into Supabase. Learner choices: system text only (user message stays in code), edited from the dashboard, readable by signed-in users, shared local/live database accepted, fail rather than fall back when no live prompt. `activate_prompt` switches in two statements inside one transaction (the one-active index is checked row by row, so a single `update ... set is_active = (version = n)` could fail). The deactivate-and-call test against the real database was blocked by the agent's permission policy (it would change shared data), so the missing-prompt path was verified with a stand-in client instead.

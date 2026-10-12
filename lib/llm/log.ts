@@ -4,6 +4,8 @@ import { LLMError, type LLMResult } from "./types";
 
 interface RunInfo {
   purpose: "parse" | "tailor";
+  // The prompts row used, and its label ("tailor-v2").
+  promptId: string;
   promptVersion: string;
   // The exact text sent to the model; stored as a hash so runs on the same input can be matched up.
   input: string;
@@ -20,6 +22,7 @@ export async function withRunLog<T>(
   const base = {
     user_id: userId,
     purpose: run.purpose,
+    prompt_id: run.promptId,
     prompt_version: run.promptVersion,
     profile_hash: createHash("sha256").update(run.input).digest("hex"),
   };

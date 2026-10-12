@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { parseResume } from "@/lib/ai/parse-resume";
+import { getActivePrompt } from "@/lib/ai/prompts";
 import { extractText, MIN_RESUME_CHARS, resumeKind } from "@/lib/extract-text";
 import {
   hasProfile,
@@ -55,6 +56,10 @@ async function handle(request: NextRequest) {
     );
   }
 
+  // Before saving anything: if the prompt can't be loaded, fail with Retry
+  // instead of treating the resume as unreadable.
+  const prompt = await getActivePrompt(supabase, "parse");
+
   await saveBackground(supabase, user.id, background);
 
   let text = "";
@@ -66,7 +71,7 @@ async function handle(request: NextRequest) {
 
   if (text.length >= MIN_RESUME_CHARS) {
     try {
-      const parsed = await parseResume(supabase, user.id, text);
+      const parsed = await parseResume(supabase, user.id, prompt, text);
       await saveParsedProfile(supabase, user.id, parsed);
       return NextResponse.json({ ok: true });
     } catch (err) {

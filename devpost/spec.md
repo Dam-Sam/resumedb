@@ -183,7 +183,13 @@ interface LLMProvider {
   - **Safeguard fallback:** Claude's safety filters sometimes block a harmless request by mistake. To recover, it enables Anthropic's server-side fallback: the beta `server-side-fallback-2026-07-01` with `fallbacks: "default"`.
   - **Refusals:** it checks `stop_reason` and treats `refusal` or `max_tokens` as errors.
 - **`index.ts`:** `getLLM()` reads `LLM_PROVIDER` and returns the matching provider. Unknown names throw.
-- **`log.ts`:** `withRunLog(purpose, fn)` writes the `llm_runs` row (success or failure, raw text, parsed JSON, tokens, latency, `prompt_version`, `profile_hash`).
+- **`log.ts`:** `withRunLog(purpose, fn)` writes the `llm_runs` row (success or failure, raw text, parsed JSON, tokens, latency, `prompt_id`, `prompt_version`, `profile_hash`).
+
+### Prompts (stored in Supabase)
+- **System prompts live in the `prompts` table**, so they change without a redeploy. The user message (the `<profile>` / `<posting>` / `<resume>` wrapper) stays in code, in `lib/ai/messages.ts`, because the code fills it in.
+- **`lib/ai/prompts.ts`:** `getActivePrompt(supabase, name)` reads the live row right before each AI call and returns its text plus a label like `tailor-v2`. No live row, or a database error, throws: tailoring shows the usual alert with Retry; onboarding loads the prompt before saving anything and fails with a retryable error rather than calling the resume unreadable. There is no fallback copy in code (learner choice: one source of truth).
+- **Changing a prompt (Supabase dashboard):** insert a row with the next `version`, then `select activate_prompt('tailor', <version>)` in the SQL editor. Rolling back is the same call with the old number. Never untick `is_active` by hand.
+- **Local and deployed apps share one Supabase project**, so activating a version changes it everywhere at once (accepted by the learner for the PoC).
 
 PRD ref: supports `prd.md > AI Reordering`, `prd.md > Bullet Comparison`, `prd.md > Key Summary Panel`, `prd.md > Tailored Summary`.
 
@@ -193,7 +199,7 @@ PRD ref: supports `prd.md > AI Reordering`, `prd.md > Bullet Comparison`, `prd.m
 **Steps:**
 1. **Load** the profile through the repository.
 2. **Serialize** it with `lib/profile/serialize.ts`: items with `id`, type, title, org, and dates; bullets with `id` and text; skills with `id`, name, and category; plus the background. Name, email, phone, and links are **never** included.
-3. **Prompt** with `lib/ai/prompts/tailor/` (live version picked in `index.ts`; `VERSION = 'tailor-v1'`):
+3. **Prompt** with the live `tailor` row from the `prompts` table (seeded as version 1) and `tailorMessage()`:
    - rank items within each section by relevance
    - rewrite each bullet for the posting while describing the same real work, with no new numbers, tools, or claims
    - rank skills
@@ -278,6 +284,7 @@ The migration lives in `supabase/migrations/0001_profile.sql`. It's the learner'
 | Account / session | Supabase Auth + a cookie | Sign up / in / out | Still signed in until sign-out or expiry |
 | Profile (contact, links, items, bullets, skills, background) | Supabase tables | Parser at onboarding; server actions on `/profile` | Exactly as left |
 | LLM logs | `llm_runs` | Appended on every parse and tailor call | Kept, visible in Supabase |
+| Prompts | `prompts` | New versions inserted and switched from the Supabase dashboard | Exactly as left; old versions kept |
 | Tailoring form inputs | React state on `/tailor` | Typing | Gone |
 | Workspace (`TailoredResume`) | React state on `/tailor` | Reducer actions | Gone, by design |
 | Applications + timeline | `applications`, `application_events` | Created on first download, resume overwritten on re-download; status from the detail page | Exactly as left |
@@ -325,8 +332,8 @@ resumedb/
 │   │   └── log.ts                 # withRunLog → llm_runs
 │   ├── ai/
 │   │   ├── schemas.ts             # zod: ParsedResume, TailoringResult
-│   │   ├── prompts/               # parse/ and tailor/: one file per version (v1.ts, v2.ts…) exporting
-│   │   │                          # VERSION, SYSTEM, userMessage(); index.ts picks the live one
+│   │   ├── prompts.ts             # getActivePrompt(): live system prompt from the prompts table
+│   │   ├── messages.ts            # parseMessage(), tailorMessage(): the user message around the data
 │   │   ├── parse-resume.ts        # text → ParsedResume
 │   │   └── tailor.ts              # profile + job → TailoringResult → assemble() → TailoredResume
 │   ├── profile/
@@ -341,7 +348,7 @@ resumedb/
 │   │   └── pdf.tsx                # FinalResume → .pdf
 │   └── extract-text.ts            # PDF (unpdf) / Word (mammoth) → plain text
 ├── proxy.ts                       # Session refresh + route protection (middleware.ts on older Next)
-├── supabase/migrations/            # 0001 profile schema + RLS, 0002 grants, 0003 tracker
+├── supabase/migrations/            # 0001 profile schema + RLS, 0002 grants, 0003 tracker, 0004 prompts
 ├── .env.example
 ├── package.json
 ├── README.md                      # Setup, env vars, how to run
