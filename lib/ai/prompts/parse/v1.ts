@@ -1,6 +1,6 @@
-// Each prompt lives in its own file with its own version.
-// Bump VERSION whenever the wording changes, so llm_runs shows which prompt
-// produced which output.
+// One file per prompt version. Once a version has been used, don't edit it:
+// copy it to a new file (v2, v3...) instead, so llm_runs labels stay true and
+// you can always switch back. index.ts picks the live one.
 
 // Resume text → structured profile (onboarding).
 

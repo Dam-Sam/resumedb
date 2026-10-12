@@ -1,10 +1,11 @@
-// Each prompt lives in its own file with its own version.
-// Bump VERSION whenever the wording changes, so llm_runs shows which prompt
-// produced which output.
+// One file per prompt version. Once a version has been used, don't edit it:
+// copy it to a new file (v2, v3...) instead, so llm_runs labels stay true and
+// you can always switch back. index.ts picks the live one.
 
 // Profile + job posting → reordering, bullet rewrites, key summary, summary.
+// Starts as a copy of v1, ready to edit.
 
-export const VERSION = "tailor-v1";
+export const VERSION = "tailor-v2";
 
 export const SYSTEM = `You tailor a person's resume to one job posting. You market them to the job while staying strictly grounded in what they actually did.
 
