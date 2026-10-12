@@ -43,8 +43,13 @@ export default async function TrackerPage() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {applications.map((a) => (
-                <tr key={a.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium">{a.company}</td>
+                <tr key={a.id} className="relative hover:bg-gray-50">
+                  <td className="px-4 py-3 font-medium">
+                    {/* The link stretches over the whole row. */}
+                    <Link href={`/applications/${a.id}`} className="after:absolute after:inset-0">
+                      {a.company}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3">{a.job_title}</td>
                   <td className="px-4 py-3 text-gray-600">
                     <LocalDate iso={a.applied_at} />
