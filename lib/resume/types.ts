@@ -10,12 +10,17 @@ export interface TailoredBullet {
   selected: Side;
   edited: { original?: string; ai?: string };
   removed: boolean;
+  // Relevance to the posting, 0 = most relevant. Used to trim to one page.
+  rank: number;
 }
 
 export interface TailoredItem {
   id: string;
   type: ItemType;
+  // Your title from the profile, and the AI's suggestion (null when it had none).
   title: string;
+  aiTitle: string | null;
+  titleSelected: Side;
   organization: string | null;
   location: string | null;
   start_date: string | null;
@@ -25,13 +30,17 @@ export interface TailoredItem {
   details: Record<string, string>;
   // Skills used on this item, shown as the italic tech line in downloads.
   skills: string[];
+  // Bullets in relevance order; only the top few start visible.
   bullets: TailoredBullet[];
+  // A hidden project (dropped by the AI or by you); can be added back.
+  removed: boolean;
 }
 
 export interface TailoredSkill {
   id: string;
   name: string;
   category: string | null;
+  removed: boolean;
 }
 
 export type TailoredSection =
@@ -69,6 +78,20 @@ export interface TailorResponse {
   resume: TailoredResume;
   // Every profile bullet per item, for the Replace popup.
   profileBulletsByItem: Record<string, { id: string; body: string }[]>;
+}
+
+// Items that start with only their most relevant bullets showing.
+export const BULLET_LIMIT = 3;
+export const TRIMMED_TYPES: ItemType[] = ["work", "volunteer", "research", "project", "open_source"];
+// Items that can be hidden as a whole. Jobs and education always stay.
+export const PROJECT_TYPES: ItemType[] = ["project", "open_source"];
+
+// Roles the AI may suggest a new title for. Project, degree and award names stay as they are.
+export const RETITLABLE_TYPES: ItemType[] = ["work", "volunteer", "research"];
+
+// The title an item currently shows.
+export function itemTitle(item: TailoredItem) {
+  return item.titleSelected === "ai" && item.aiTitle ? item.aiTitle : item.title;
 }
 
 // The text a bullet currently shows on a given side, including edits.

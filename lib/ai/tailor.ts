@@ -4,12 +4,16 @@ import { withRunLog } from "@/lib/llm/log";
 import type { Profile } from "@/lib/profile/repository";
 import { serializeProfile } from "@/lib/profile/serialize";
 import { SECTIONS } from "@/lib/profile/sections";
-import type {
-  TailoredItem,
-  TailoredResume,
-  TailoredSection,
-  TailorInput,
-  TailorResponse,
+import {
+  BULLET_LIMIT,
+  PROJECT_TYPES,
+  RETITLABLE_TYPES,
+  TRIMMED_TYPES,
+  type TailoredItem,
+  type TailoredResume,
+  type TailoredSection,
+  type TailorInput,
+  type TailorResponse,
 } from "@/lib/resume/types";
 import { tailorMessage } from "./messages";
 import { getActivePrompt } from "./prompts";
@@ -51,6 +55,18 @@ export function assemble(profile: Profile, result: TailoringResult, input: Tailo
     if (!rewrites.has(id) && r.rewrite.trim()) rewrites.set(id, r.rewrite.trim());
   }
 
+  const bulletRank = new Map(
+    rankIds(result.bulletOrder, profile.items.flatMap((i) => i.bullets.map((b) => b.id)), "bullet").map((id, n) => [id, n]),
+  );
+  const droppedProjects = new Set(result.droppedProjectIds.map((id) => stripPrefix(id, "item")));
+  const droppedSkills = new Set(result.droppedSkillIds.map((id) => stripPrefix(id, "skill")));
+
+  const titles = new Map<string, string>();
+  for (const r of result.titleRewrites) {
+    const id = stripPrefix(r.itemId, "item");
+    if (!titles.has(id) && r.title.trim()) titles.set(id, r.title.trim());
+  }
+
   const itemsById = new Map(profile.items.map((i) => [i.id, i]));
   const orderedItems: TailoredItem[] = itemOrder.map((id) => {
     const item = itemsById.get(id)!;
@@ -58,6 +74,12 @@ export function assemble(profile: Profile, result: TailoringResult, input: Tailo
       id: item.id,
       type: item.type,
       title: item.title,
+      // Only roles get a suggestion, and only when it actually differs.
+      aiTitle:
+        RETITLABLE_TYPES.includes(item.type) && titles.get(item.id) && titles.get(item.id) !== item.title
+          ? titles.get(item.id)!
+          : null,
+      titleSelected: "original",
       organization: item.organization,
       location: item.location,
       start_date: item.start_date,
@@ -66,20 +88,28 @@ export function assemble(profile: Profile, result: TailoringResult, input: Tailo
       description: item.description,
       details: item.details,
       skills: item.skills,
-      bullets: item.bullets.map((b) => ({
-        id: b.id,
-        original: b.body,
-        // No rewrite from the model: show the original on both sides.
-        ai: rewrites.get(b.id) ?? b.body,
-        selected: "original",
-        edited: {},
-        removed: false,
-      })),
+      // Most relevant first. Roles and projects show their top few; the rest
+      // start hidden and can be added back. Education etc. keep every bullet.
+      bullets: [...item.bullets]
+        .sort((a, b) => bulletRank.get(a.id)! - bulletRank.get(b.id)!)
+        .map((b, n) => ({
+          id: b.id,
+          original: b.body,
+          // No rewrite from the model: show the original on both sides.
+          ai: rewrites.get(b.id) ?? b.body,
+          selected: "original" as const,
+          edited: {},
+          removed: TRIMMED_TYPES.includes(item.type) && n >= BULLET_LIMIT,
+          rank: bulletRank.get(b.id)!,
+        })),
+      removed: PROJECT_TYPES.includes(item.type) && droppedProjects.has(item.id),
     };
   });
 
   const summary = input.includeSummary ? (result.summary?.trim() || null) : null;
-  const skillsById = new Map(profile.skills.map((s) => [s.id, s]));
+  const skillsById = new Map(
+    profile.skills.map((s) => [s.id, { id: s.id, name: s.name, category: s.category, removed: droppedSkills.has(s.id) }]),
+  );
 
   // Default section order: Summary? → Experience → Projects → Skills → Education → others.
   const sections: TailoredSection[] = [];

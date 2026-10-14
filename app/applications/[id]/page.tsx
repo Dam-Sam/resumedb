@@ -65,7 +65,7 @@ export default async function ApplicationPage({ params }: PageProps<"/applicatio
         <div className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-sm font-semibold">Resume you sent</h2>
-            <RedownloadButtons resume={app.resume} company={app.company} jobTitle={app.job_title} />
+            <RedownloadButtons resume={app.resume} />
           </div>
           <FrozenResume resume={app.resume} />
         </div>

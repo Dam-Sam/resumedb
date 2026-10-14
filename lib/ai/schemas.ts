@@ -64,6 +64,16 @@ export const TailoringResult = z.object({
   summary: z.string().nullable().describe("Tailored summary, or null if not requested"),
   itemOrder: z.array(z.string()).describe("Every item id, most relevant to the posting first"),
   bulletRewrites: z.array(z.object({ bulletId: z.string(), rewrite: z.string() })),
+  bulletOrder: z.array(z.string()).describe("Every bullet id, most relevant to the posting first"),
+  droppedProjectIds: z
+    .array(z.string())
+    .describe("Project ids with no real relevance to the posting; they start hidden"),
+  titleRewrites: z
+    .array(z.object({ itemId: z.string(), title: z.string() }))
+    .describe("Suggested role titles, only for roles whose own bullets support a better-aligned title; usually few or none"),
   skillOrder: z.array(z.string()).describe("Every skill id, most relevant to the posting first"),
+  droppedSkillIds: z
+    .array(z.string())
+    .describe("Skill ids with no relevance to the posting; they start hidden"),
 });
 export type TailoringResult = z.infer<typeof TailoringResult>;

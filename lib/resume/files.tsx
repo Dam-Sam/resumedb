@@ -19,3 +19,9 @@ export function saveFile(blob: Blob, fileName: string) {
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+// How many pages the PDF download would be. Each page is one "/Type /Page" object.
+export async function countPdfPages(final: FinalResume): Promise<number> {
+  const text = await (await buildResumeFile(final, "pdf")).text();
+  return text.match(/\/Type\s*\/Page(?!s)/g)?.length ?? 1;
+}

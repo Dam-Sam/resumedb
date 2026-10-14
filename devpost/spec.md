@@ -253,7 +253,7 @@ PRD ref: `prd.md > Bullet Comparison`, `prd.md > Table of Contents`, `prd.md > K
 - **`lib/resume/theme.ts`:** ported from `resume-generator/theme.js`.
 - **`lib/resume/docx.ts`:** the `FinalResume` becomes a `Document`, then `Packer.toBlob`, then a download. This is a port of `build.js` layout functions.
 - **`lib/resume/pdf.tsx`:** the same `FinalResume` becomes a `@react-pdf/renderer` `<Document>`, then `pdf().toBlob()`, then a download. Loaded with a dynamic import, browser-only.
-- **File names:** `{FullName}_{Company}_{JobTitle}.docx` and `.pdf`.
+- **File names:** `{Full Name} - Resume.docx` and `.pdf`, for both downloads and Tracker re-downloads (learner change after the PoC; the Tracker already records company and role).
 
 PRD ref: `prd.md > Download`.
 

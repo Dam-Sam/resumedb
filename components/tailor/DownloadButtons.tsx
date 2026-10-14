@@ -20,7 +20,7 @@ export default function DownloadButtons({ resume, jobDescription }: { resume: Ta
     const final = buildFinalResume(resume);
     try {
       const blob = await buildResumeFile(final, ext);
-      saveFile(blob, resumeFileName(final.name, resume.company, resume.jobTitle, ext));
+      saveFile(blob, resumeFileName(final.name, ext));
     } catch (err) {
       console.error(err);
       setError("Couldn't create the file. Please try again.");

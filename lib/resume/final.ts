@@ -1,5 +1,5 @@
 import { formatRange } from "@/lib/profile/sections";
-import { sideText, type TailoredResume } from "./types";
+import { itemTitle, sideText, type TailoredResume } from "./types";
 
 // The resume exactly as it will be downloaded: plain text, no choices left.
 export interface FinalItem {
@@ -26,7 +26,8 @@ export interface FinalResume {
 }
 
 // Workspace state → what goes in the file: sections in contents order, each
-// bullet's selected (and edited) text, removed bullets dropped, summary only if chosen.
+// title and bullet's selected (and edited) text, hidden bullets, projects and skills
+// dropped, summary only if chosen.
 export function buildFinalResume(state: TailoredResume): FinalResume {
   const { contact } = state;
   const sections: FinalSection[] = [];
@@ -38,7 +39,7 @@ export function buildFinalResume(state: TailoredResume): FinalResume {
     } else if (s.kind === "skills") {
       // Group by category, categories in the order of their most relevant skill.
       const groups = new Map<string, string[]>();
-      for (const skill of s.skills) {
+      for (const skill of s.skills.filter((k) => !k.removed)) {
         const label = skill.category ?? "Skills";
         groups.set(label, [...(groups.get(label) ?? []), skill.name]);
       }
@@ -46,13 +47,15 @@ export function buildFinalResume(state: TailoredResume): FinalResume {
         sections.push({ kind: "skills", title: s.title, groups: [...groups].map(([label, names]) => ({ label, names })) });
       }
     } else {
+      const items = s.items.filter((i) => !i.removed);
+      if (!items.length) continue;
       sections.push({
         kind: "items",
         title: s.title,
         // Items with every bullet removed still appear, by title.
-        items: s.items.map((item) => ({
+        items: items.map((item) => ({
           type: item.type,
-          title: item.title,
+          title: itemTitle(item),
           organization: item.organization,
           location: item.location,
           dates: formatRange(item.start_date, item.end_date, item.is_current),
@@ -77,9 +80,8 @@ export function buildFinalResume(state: TailoredResume): FinalResume {
   };
 }
 
-// {FullName}_{Company}_{JobTitle}, letters and digits only within each part.
-export function resumeFileName(name: string, company: string, jobTitle: string, ext: "docx" | "pdf") {
-  const part = (s: string) => s.replace(/[^\p{L}\p{N}]+/gu, "");
-  const parts = [name || "Resume", company, jobTitle].map(part).filter(Boolean);
-  return `${parts.join("_")}.${ext}`;
+// "{Full Name} - Resume.pdf". Characters that aren't allowed in file names are dropped.
+export function resumeFileName(name: string, ext: "docx" | "pdf") {
+  const clean = name.replace(/[\\/:*?"<>|\p{Cc}]+/gu, "").replace(/\s+/g, " ").trim();
+  return `${clean ? `${clean} - ` : ""}Resume.${ext}`;
 }

@@ -2,12 +2,17 @@
 
 import { useEffect } from "react";
 
-// Lists the other bullets from your profile for the same job or project.
+// Lists bullets from your profile for one job or project: the other bullets
+// to swap in (Replace), or the hidden ones to bring back (Add bullet).
 export default function ReplaceDialog({
+  title = "Replace with another bullet",
+  empty = "No other bullets for this item.",
   options,
   onPick,
   onClose,
 }: {
+  title?: string;
+  empty?: string;
   options: { id: string; body: string }[];
   onPick: (bullet: { id: string; body: string }) => void;
   onClose: () => void;
@@ -29,14 +34,14 @@ export default function ReplaceDialog({
       >
         <div className="mb-3 flex items-center justify-between">
           <h2 id="replace-title" className="font-semibold">
-            Replace with another bullet
+            {title}
           </h2>
           <button onClick={onClose} aria-label="Close" className="text-gray-500 hover:text-gray-900">
             ✕
           </button>
         </div>
         {options.length === 0 ? (
-          <p className="text-sm text-gray-600">No other bullets for this item.</p>
+          <p className="text-sm text-gray-600">{empty}</p>
         ) : (
           <ul className="space-y-2">
             {options.map((b) => (
