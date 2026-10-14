@@ -37,5 +37,8 @@ create policy own_rows on email_connections for select to authenticated
 -- through the server with the service role.
 grant select (id, user_id, provider, email_address, history_id, watch_expires_at, status, last_error, last_synced_at, created_at, updated_at)
   on email_connections to authenticated;
+-- This project's default privileges hand out TRUNCATE (which skips RLS) and
+-- friends on new tables; the email tables don't need them.
+revoke truncate, references, trigger on email_connections, email_messages from anon, authenticated;
 
 commit;
