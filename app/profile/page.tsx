@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import AddSection from "@/components/profile/AddSection";
 import ContactEditor from "@/components/profile/ContactEditor";
+import EmailConnections, { type ConnectionRow } from "@/components/profile/EmailConnections";
 import ItemEditor from "@/components/profile/ItemEditor";
 import SkillsEditor from "@/components/profile/SkillsEditor";
 import { loadProfile } from "@/lib/profile/repository";
@@ -17,8 +18,13 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
   } = await supabase.auth.getUser();
   if (!user) redirect("/sign-in");
 
-  const { unreadable } = await searchParams;
+  const { unreadable, gmail } = await searchParams;
   const profile = await loadProfile(supabase, user.id);
+  const { data: connections } = await supabase
+    .from("email_connections")
+    .select("id, provider, email_address, status, last_error, last_synced_at")
+    .eq("user_id", user.id)
+    .order("created_at");
 
   return (
     <div className="mx-auto max-w-3xl space-y-10 px-6 py-12">
@@ -58,6 +64,16 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
       <Section title="Skills">
         <SkillsEditor skills={profile.skills} />
       </Section>
+
+      {/* Hidden until the Google OAuth client is configured for this deployment. */}
+      {process.env.GOOGLE_CLIENT_ID && (
+        <Section title="Connected email">
+          <EmailConnections
+            connections={(connections ?? []) as ConnectionRow[]}
+            result={typeof gmail === "string" ? gmail : undefined}
+          />
+        </Section>
+      )}
 
       <Section title="Add a section">
         <p className="mb-3 text-sm text-gray-600">Certifications, awards, publications, languages and more.</p>

@@ -78,7 +78,42 @@ export async function getApplication(supabase: SupabaseClient, id: string): Prom
 
 // The trigger records the change on the timeline.
 export async function setStatus(supabase: SupabaseClient, id: string, status: Status) {
-  const { data, error } = await supabase.from("applications").update({ status }).eq("id", id).select("id");
+  const { data, error } = await supabase
+    .from("applications")
+    .update({ status, status_source: "manual", status_email_id: null })
+    .eq("id", id)
+    .select("id");
   if (error) throw error;
   if (!data.length) throw new Error("application not found");
+}
+
+// Applications an email can still move forward.
+export async function listOpenApplications(supabase: SupabaseClient, userId: string) {
+  const { data, error } = await supabase
+    .from("applications")
+    .select("id, company, job_title, status")
+    .eq("user_id", userId)
+    .not("status", "in", "(offer,rejected)");
+  if (error) throw error;
+  return data as { id: string; company: string; job_title: string; status: Status }[];
+}
+
+// An email moved this application forward. Only applies if the status is still
+// what the decision was based on, so a change made in the meantime wins.
+// Returns false when it didn't apply.
+export async function setStatusFromEmail(
+  supabase: SupabaseClient,
+  id: string,
+  from: Status,
+  to: Status,
+  emailMessageId: string,
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("applications")
+    .update({ status: to, status_source: "email", status_email_id: emailMessageId })
+    .eq("id", id)
+    .eq("status", from)
+    .select("id");
+  if (error) throw error;
+  return data.length > 0;
 }

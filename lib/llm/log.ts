@@ -3,10 +3,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { LLMError, type LLMResult } from "./types";
 
 interface RunInfo {
-  purpose: "parse" | "tailor";
-  // The prompts row used, and its label ("tailor-v2").
-  promptId: string;
+  purpose: "parse" | "tailor" | "email";
+  // The prompts row used, and its label ("tailor-v2"). Calls whose questions
+  // live in code (email) have no row, only a label.
+  promptId: string | null;
   promptVersion: string;
+  // Recorded on a failed call that never reached a model. Defaults to LLM_MODEL.
+  model?: string;
   // The exact text sent to the model; stored as a hash so runs on the same input can be matched up.
   input: string;
 }
@@ -44,7 +47,7 @@ export async function withRunLog<T>(
     const d = err instanceof LLMError ? err.details : {};
     await insertRun(supabase, {
       ...base,
-      model: d.model ?? process.env.LLM_MODEL ?? "unknown",
+      model: d.model ?? run.model ?? process.env.LLM_MODEL ?? "unknown",
       status: "failed",
       raw_response: d.raw,
       error: err instanceof Error ? err.message : String(err),
