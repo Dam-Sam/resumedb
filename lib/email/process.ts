@@ -70,8 +70,29 @@ function none(reason: string): Decision {
   return { outcome: "ignored", applicationId: null, status: null, reason };
 }
 
+// A run that crashed partway leaves its row pending; after this long it's retried.
+const STALE_PENDING_MS = 10 * 60 * 1000;
+
 // Inserts the email's row, or returns null if this email was already processed.
+// A row whose earlier attempt failed (or crashed) is claimed again.
 async function claim(supabase: SupabaseClient, userId: string, email: IncomingEmail): Promise<string | null> {
+  const inserted = await insertRow(supabase, userId, email);
+  if (inserted) return inserted;
+
+  const stale = new Date(Date.now() - STALE_PENDING_MS).toISOString();
+  const { data, error } = await supabase
+    .from("email_messages")
+    .update({ outcome: "pending", reason: null })
+    .eq("user_id", userId)
+    .eq("provider", email.provider)
+    .eq("provider_message_id", email.providerMessageId)
+    .or(`outcome.eq.failed,and(outcome.eq.pending,updated_at.lt.${stale})`)
+    .select("id");
+  if (error) throw error;
+  return data[0]?.id ?? null;
+}
+
+async function insertRow(supabase: SupabaseClient, userId: string, email: IncomingEmail): Promise<string | null> {
   const { data, error } = await supabase
     .from("email_messages")
     .upsert(
