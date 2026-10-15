@@ -3,6 +3,7 @@
 import { refresh } from "next/cache";
 import { z } from "zod";
 import * as repo from "@/lib/applications/repository";
+import { acceptSuggestion, dismissSuggestion } from "@/lib/email/suggestions";
 import type { FinalResume } from "@/lib/resume/final";
 import { createClient } from "@/lib/supabase/server";
 
@@ -62,6 +63,25 @@ export async function setStatus(id: string, status: string): Promise<{ error?: s
   } catch (err) {
     console.error("setStatus failed:", err);
     return { error: "Couldn't update the status. Please try again." };
+  }
+  refresh();
+  return {};
+}
+
+// A suggestion from an email: update the status it proposed, or set it aside.
+export async function answerSuggestion(id: string, answer: "accept" | "dismiss"): Promise<{ error?: string }> {
+  if (!z.uuid().safeParse(id).success) return { error: "Unknown suggestion." };
+  const { supabase, user } = await signedIn();
+  if (!user) return { error: "Please sign in again." };
+  try {
+    if (answer === "dismiss") await dismissSuggestion(supabase, id);
+    else if (!(await acceptSuggestion(supabase, id))) {
+      refresh();
+      return { error: "This application's status has changed since. Nothing was updated." };
+    }
+  } catch (err) {
+    console.error("answerSuggestion failed:", err);
+    return { error: "Couldn't save that. Please try again." };
   }
   refresh();
   return {};

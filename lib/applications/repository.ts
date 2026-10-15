@@ -27,7 +27,16 @@ export interface ApplicationRow {
 export interface Application extends ApplicationRow {
   job_description: string;
   resume: FinalResume;
-  events: { id: string; status: Status; created_at: string }[];
+  events: ApplicationEvent[];
+}
+
+export interface ApplicationEvent {
+  id: string;
+  status: Status;
+  created_at: string;
+  source: "manual" | "email";
+  // The email behind an automatic or accepted change.
+  email: { subject: string; from_name: string | null; from_address: string } | null;
 }
 
 export interface NewApplication {
@@ -68,7 +77,7 @@ export async function listApplications(supabase: SupabaseClient, userId: string)
 export async function getApplication(supabase: SupabaseClient, id: string): Promise<Application | null> {
   const { data, error } = await supabase
     .from("applications")
-    .select("id, company, job_title, status, applied_at, job_description, resume, events:application_events(id, status, created_at)")
+    .select("id, company, job_title, status, applied_at, job_description, resume, events:application_events(id, status, created_at, source, email:email_messages(subject, from_name, from_address))")
     .eq("id", id)
     .order("created_at", { referencedTable: "application_events" })
     .maybeSingle();

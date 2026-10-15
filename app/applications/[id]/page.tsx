@@ -48,7 +48,17 @@ export default async function ApplicationPage({ params }: PageProps<"/applicatio
               {app.events.map((e) => (
                 <li key={e.id} className="relative text-sm">
                   <span className="absolute -left-[21px] top-1.5 h-2 w-2 rounded-full bg-gray-400" />
-                  <StatusBadge status={e.status} />
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <StatusBadge status={e.status} />
+                    {e.source === "email" && (
+                      <span className="rounded-full border border-gray-200 px-2 py-0.5 text-xs text-gray-600">From email</span>
+                    )}
+                  </div>
+                  {e.email && (
+                    <div className="mt-1 text-xs text-gray-600" title={e.email.from_address}>
+                      “{e.email.subject || "(no subject)"}” · {e.email.from_name ?? e.email.from_address}
+                    </div>
+                  )}
                   <div className="mt-1 text-xs text-gray-500">
                     <LocalDate iso={e.created_at} withTime />
                   </div>

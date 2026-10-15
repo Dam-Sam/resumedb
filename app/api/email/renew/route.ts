@@ -4,11 +4,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export const maxDuration = 300;
 
-// Gmail watches lapse after 7 days, so they're renewed well before that.
-const RENEW_WITHIN_MS = 2 * 24 * 60 * 60 * 1000;
-
-// Daily (vercel.json): renew push notifications that are about to lapse, and
-// catch up on anything a lost notification missed.
+// Daily (vercel.json): renew every push notification watch, and catch up on
+// anything a lost notification missed. Watches lapse after 7 days; Google
+// recommends renewing once a day, which leaves room for a few failed runs.
 export async function GET(request: NextRequest) {
   // Vercel sends the project's CRON_SECRET; anyone else is turned away.
   if (!process.env.CRON_SECRET || request.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -23,17 +21,15 @@ export async function GET(request: NextRequest) {
     .eq("status", "active");
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const soon = Date.now() + RENEW_WITHIN_MS;
   const results = [];
   for (const conn of data as GmailConnection[]) {
     try {
-      const due = !conn.watch_expires_at || new Date(conn.watch_expires_at).getTime() < soon;
-      if (due && !(await renewWatch(admin, conn))) {
+      if (!(await renewWatch(admin, conn))) {
         results.push({ id: conn.id, result: "revoked" });
         continue;
       }
       const { processed } = await syncGmail(admin, conn);
-      results.push({ id: conn.id, result: due ? "renewed" : "ok", processed });
+      results.push({ id: conn.id, result: "renewed", processed });
     } catch (err) {
       console.error(`renew failed for connection ${conn.id}:`, err);
       results.push({ id: conn.id, result: "error" });
