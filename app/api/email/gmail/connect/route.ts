@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.redirect(new URL("/sign-in", request.url));
-  if (!process.env.GOOGLE_CLIENT_ID) return NextResponse.redirect(new URL("/profile", request.url));
+  if (!process.env.GOOGLE_CLIENT_ID) return NextResponse.redirect(new URL("/integrations", request.url));
 
   const state = randomBytes(24).toString("base64url");
   const redirectUri = new URL("/api/email/gmail/callback", request.url).toString();
