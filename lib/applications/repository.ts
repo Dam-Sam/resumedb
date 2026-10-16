@@ -64,6 +64,14 @@ export async function overwriteResume(supabase: SupabaseClient, id: string, resu
   if (!data.length) throw new Error("application not found");
 }
 
+// Deletes the given applications. Their timelines go with them (cascade); emails
+// and agent tailorings that pointed at them stay, unlinked. Returns how many went.
+export async function deleteApplications(supabase: SupabaseClient, ids: string[]): Promise<number> {
+  const { data, error } = await supabase.from("applications").delete().in("id", ids).select("id");
+  if (error) throw error;
+  return data.length;
+}
+
 export async function listApplications(supabase: SupabaseClient, userId: string): Promise<ApplicationRow[]> {
   const { data, error } = await supabase
     .from("applications")
