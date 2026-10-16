@@ -74,6 +74,27 @@ export async function listApplications(supabase: SupabaseClient, userId: string)
   return data;
 }
 
+export interface DashboardApplication extends ApplicationRow {
+  // When the current status was set, and whether an email set it.
+  last_event: { created_at: string; source: "manual" | "email" } | null;
+}
+
+// Every application with its latest timeline entry, for the Dashboard.
+export async function listDashboardApplications(supabase: SupabaseClient, userId: string): Promise<DashboardApplication[]> {
+  const { data, error } = await supabase
+    .from("applications")
+    .select("id, company, job_title, status, applied_at, events:application_events(created_at, source)")
+    .eq("user_id", userId)
+    .order("applied_at", { ascending: false })
+    .order("created_at", { referencedTable: "application_events", ascending: false })
+    .limit(1, { referencedTable: "application_events" });
+  if (error) throw error;
+  return (data as (ApplicationRow & { events: DashboardApplication["last_event"][] })[]).map(({ events, ...a }) => ({
+    ...a,
+    last_event: events[0] ?? null,
+  }));
+}
+
 export async function getApplication(supabase: SupabaseClient, id: string): Promise<Application | null> {
   const { data, error } = await supabase
     .from("applications")
