@@ -3,7 +3,7 @@ import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import type { z } from "zod";
 import { LLMError, type LLMProvider, type LLMResult } from "./types";
 
-const DEFAULT_MODEL = "claude-opus-5-5";
+const DEFAULT_MODEL = "claude-sonnet-5-5";
 
 export class ClaudeProvider implements LLMProvider {
   name = "claude";
@@ -29,7 +29,9 @@ export class ClaudeProvider implements LLMProvider {
       // If a safety filter blocks a harmless request by mistake, Anthropic retries it on another model.
       betas: ["server-side-fallback-2026-07-01"],
       fallbacks: "default",
-      system,
+      // The system prompt is the same on every call for a purpose, so it's cached:
+      // later calls within 5 minutes read it at a tenth of the input price.
+      system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
       messages: [{ role: "user", content: prompt }],
     });
 
@@ -41,6 +43,8 @@ export class ClaudeProvider implements LLMProvider {
       model: response.model,
       inputTokens: response.usage.input_tokens,
       outputTokens: response.usage.output_tokens,
+      cacheReadTokens: response.usage.cache_read_input_tokens ?? undefined,
+      cacheWriteTokens: response.usage.cache_creation_input_tokens ?? undefined,
     };
 
     if (response.stop_reason === "refusal") {

@@ -40,6 +40,8 @@ export async function withRunLog<T>(
       parsed_response: result.data,
       input_tokens: result.inputTokens,
       output_tokens: result.outputTokens,
+      cache_read_input_tokens: result.cacheReadTokens,
+      cache_creation_input_tokens: result.cacheWriteTokens,
       latency_ms: Date.now() - started,
     });
     return result;
@@ -53,6 +55,8 @@ export async function withRunLog<T>(
       error: err instanceof Error ? err.message : String(err),
       input_tokens: d.inputTokens,
       output_tokens: d.outputTokens,
+      cache_read_input_tokens: d.cacheReadTokens,
+      cache_creation_input_tokens: d.cacheWriteTokens,
       latency_ms: Date.now() - started,
     });
     throw err;
