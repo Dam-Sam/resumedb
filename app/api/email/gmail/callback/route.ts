@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 // a refresh token, save it encrypted, and start push notifications.
 export async function GET(request: NextRequest) {
   const done = (result: string) => {
-    const response = NextResponse.redirect(new URL(`/profile?gmail=${result}`, request.url));
+    const response = NextResponse.redirect(new URL(`/integrations?gmail=${result}`, request.url));
     response.cookies.delete({ name: gmail.STATE_COOKIE, path: "/api/email/gmail" });
     return response;
   };

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { disconnectEmail } from "@/app/profile/email-actions";
+import { disconnectEmail } from "@/app/integrations/email-actions";
 import LocalDate from "@/components/applications/LocalDate";
 
 export interface ConnectionRow {
