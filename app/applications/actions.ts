@@ -54,6 +54,22 @@ export async function saveApplication(input: z.input<typeof SaveInput>): Promise
   }
 }
 
+// Deletes the selected Tracker rows. RLS keeps it to the user's own applications.
+export async function deleteApplications(ids: string[]): Promise<{ error?: string }> {
+  const parsed = z.array(z.uuid()).min(1).max(1000).safeParse(ids);
+  if (!parsed.success) return { error: "Nothing to delete." };
+  const { supabase, user } = await signedIn();
+  if (!user) return { error: "Please sign in again." };
+  try {
+    await repo.deleteApplications(supabase, [...new Set(parsed.data)]);
+  } catch (err) {
+    console.error("deleteApplications failed:", err);
+    return { error: "Couldn't delete. Please try again." };
+  }
+  refresh();
+  return {};
+}
+
 export async function setStatus(id: string, status: string): Promise<{ error?: string }> {
   if (!(repo.STATUSES as readonly string[]).includes(status)) return { error: "Unknown status." };
   const { supabase, user } = await signedIn();

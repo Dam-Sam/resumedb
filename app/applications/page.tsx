@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import LocalDate from "@/components/applications/LocalDate";
-import StatusBadge from "@/components/applications/StatusBadge";
 import Suggestions from "@/components/applications/Suggestions";
+import TrackerTable from "@/components/applications/TrackerTable";
 import { listApplications } from "@/lib/applications/repository";
 import { listSuggestions } from "@/lib/email/suggestions";
 import { createClient } from "@/lib/supabase/server";
@@ -38,37 +37,7 @@ export default async function TrackerPage() {
           and download it to add one.
         </div>
       ) : (
-        <div className="mt-8 overflow-x-auto rounded-lg border border-gray-200 bg-white">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
-              <tr>
-                <th className="px-4 py-3 font-medium">Company</th>
-                <th className="px-4 py-3 font-medium">Role</th>
-                <th className="px-4 py-3 font-medium">Date applied</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {applications.map((a) => (
-                <tr key={a.id} className="relative hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium">
-                    {/* The link stretches over the whole row. */}
-                    <Link href={`/applications/${a.id}`} className="after:absolute after:inset-0">
-                      {a.company}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3">{a.job_title}</td>
-                  <td className="px-4 py-3 text-gray-600">
-                    <LocalDate iso={a.applied_at} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge status={a.status} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <TrackerTable applications={applications} />
       )}
     </div>
   );
