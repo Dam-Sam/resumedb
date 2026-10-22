@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import AddSection from "@/components/profile/AddSection";
+import ImportResume from "@/components/profile/ImportResume";
 import ContactEditor from "@/components/profile/ContactEditor";
 import ItemEditor from "@/components/profile/ItemEditor";
 import SkillsEditor from "@/components/profile/SkillsEditor";
@@ -34,6 +35,10 @@ export default async function ProfilePage({ searchParams }: PageProps<"/profile"
           We couldn&apos;t read your resume — please enter your information.
         </div>
       )}
+
+      <Section title="Import a resume">
+        <ImportResume />
+      </Section>
 
       <Section title="Personal Information">
         <ContactEditor profile={profile} />

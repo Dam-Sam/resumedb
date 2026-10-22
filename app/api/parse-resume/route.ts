@@ -3,6 +3,7 @@ import { parseResume } from "@/lib/ai/parse-resume";
 import { getActivePrompt } from "@/lib/ai/prompts";
 import { extractText, MIN_RESUME_CHARS, resumeKind } from "@/lib/extract-text";
 import {
+  clearProfileContent,
   hasProfile,
   saveBackground,
   saveEmptyContact,
@@ -15,7 +16,8 @@ export const maxDuration = 120;
 
 const MAX_BYTES = 4 * 1024 * 1024;
 
-// Onboarding: resume file + background → extract text → Claude → saved profile rows.
+// Resume file → extract text → Claude → saved profile rows. First time (onboarding)
+// it also takes a background; later imports on /profile pass mode=add|replace.
 export async function POST(request: NextRequest) {
   try {
     return await handle(request);
@@ -33,12 +35,13 @@ async function handle(request: NextRequest) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Please sign in again." }, { status: 401 });
 
-  // Onboarding runs once; afterwards the profile is edited on /profile.
-  if (await hasProfile(supabase, user.id)) {
+  const form = await request.formData();
+  const existing = await hasProfile(supabase, user.id);
+  const mode = form.get("mode");
+  // Onboarding runs once; after that an import must say whether to add or replace.
+  if (existing && mode !== "add" && mode !== "replace") {
     return NextResponse.json({ error: "You already have a profile." }, { status: 409 });
   }
-
-  const form = await request.formData();
   const file = form.get("resume");
   const background = String(form.get("background") ?? "");
 
@@ -60,7 +63,7 @@ async function handle(request: NextRequest) {
   // instead of treating the resume as unreadable.
   const prompt = await getActivePrompt(supabase, "parse");
 
-  await saveBackground(supabase, user.id, background);
+  if (!existing) await saveBackground(supabase, user.id, background);
 
   let text = "";
   try {
@@ -72,14 +75,18 @@ async function handle(request: NextRequest) {
   if (text.length >= MIN_RESUME_CHARS) {
     try {
       const parsed = await parseResume(supabase, user.id, prompt, text);
-      await saveParsedProfile(supabase, user.id, parsed);
+      // Only clear after the resume parsed, so a failed read never wipes the profile.
+      if (mode === "replace") await clearProfileContent(supabase, user.id);
+      await saveParsedProfile(supabase, user.id, parsed, { addToExisting: mode === "add" });
       return NextResponse.json({ ok: true });
     } catch (err) {
       console.error("Resume parsing failed:", err);
     }
   }
 
-  // Couldn't read it: keep the background, and let the user fill in the rest by hand.
+  // Couldn't read it. An existing profile stays as it was.
+  if (existing) return NextResponse.json({ unreadable: true });
+  // Otherwise keep the background, and let the user fill in the rest by hand.
   await saveEmptyContact(supabase, user.id);
   return NextResponse.json({ unreadable: true });
 }

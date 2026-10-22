@@ -105,12 +105,35 @@ export async function saveEmptyContact(supabase: SupabaseClient, userId: string)
   );
 }
 
+// Import "replace": drops links, items (their bullets and item skills cascade)
+// and skills. Contact info and background are overwritten/kept by the caller.
+export async function clearProfileContent(supabase: SupabaseClient, userId: string) {
+  await check(supabase.from("profile_links").delete().eq("user_id", userId));
+  await check(supabase.from("profile_items").delete().eq("user_id", userId));
+  await check(supabase.from("skills").delete().eq("user_id", userId));
+}
+
 // Writes a freshly parsed resume. Sequential inserts, no transaction (see spec:
 // "What Was Simplified"). Order: contact, links, items, bullets, skills, item_skills.
-export async function saveParsedProfile(supabase: SupabaseClient, userId: string, parsed: ParsedResume) {
-  const { contact, links, items, skills } = parsed;
+//
+// With `addToExisting` (re-importing onto a profile), contact info and existing
+// links are left alone and everything else is appended.
+export async function saveParsedProfile(
+  supabase: SupabaseClient,
+  userId: string,
+  parsed: ParsedResume,
+  { addToExisting = false }: { addToExisting?: boolean } = {},
+) {
+  const { contact, items, skills } = parsed;
+  let links = parsed.links;
 
-  await check(supabase.from("contact_info").upsert({ user_id: userId, ...contact }));
+  if (addToExisting) {
+    const { data } = await supabase.from("profile_links").select("url").eq("user_id", userId);
+    const have = new Set((data ?? []).map((l) => l.url.trim().toLowerCase()));
+    links = links.filter((l) => !have.has(l.url.trim().toLowerCase()));
+  } else {
+    await check(supabase.from("contact_info").upsert({ user_id: userId, ...contact }));
+  }
 
   if (links.length) {
     await check(supabase.from("profile_links").insert(links.map((l) => ({ user_id: userId, ...l }))));
