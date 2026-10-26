@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { releaseNavLock } from "@/components/NavLock";
 import ErrorAlert from "@/components/ErrorAlert";
 import DaysSince from "@/components/applications/DaysSince";
 import OnboardingSteps from "@/components/onboarding/OnboardingSteps";
@@ -48,6 +49,10 @@ export default function TailorFlow({ recent, onboarding = false }: { recent: App
       setView({ kind: "error", message: "We couldn't finish tailoring." });
     }
   }
+
+  // Once the workspace has loaded the onboarding steps are done, so the navbar unlocks.
+  const inWorkspace = view.kind === "workspace";
+  useEffect(() => (onboarding && inWorkspace ? releaseNavLock() : undefined), [onboarding, inWorkspace]);
 
   if (view.kind === "workspace") {
     return <Workspace data={view.data} jobDescription={input.jobDescription} onStartOver={() => setView({ kind: "form" })} />;
