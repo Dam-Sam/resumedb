@@ -4,6 +4,9 @@ Tailor your resume to a specific job posting. ResumeDB reorders your experience 
 
 Built with Next.js, Supabase (accounts + Postgres), and Claude.
 
+## dev credentials
+email=dev-populated@resumedb.test password=dev-only-not-a-secret
+
 ## Run it locally
 
 Needs Node 20+.
