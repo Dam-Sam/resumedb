@@ -1,9 +1,10 @@
 "use client";
 
+import { Plus } from "lucide-react";
 import { useState } from "react";
 import * as actions from "@/app/profile/actions";
 import type { ItemType } from "@/lib/ai/schemas";
-import { inputClass, SaveStatus, useSave } from "./useSave";
+import { inputClass, SaveStatus, smallButton, useSave } from "./useSave";
 
 const TYPE_LABELS: Record<ItemType, string> = {
   work: "Work",
@@ -33,14 +34,15 @@ export default function AddSection({ types, label }: { types?: ItemType[]; label
         e.preventDefault();
         save(() => actions.addItem(type, title), () => setTitle(""));
       }}
-      className="flex flex-wrap items-center gap-2"
+      className="pf-addrow"
     >
       {options.length > 1 && (
         <select
           aria-label="Entry type"
           value={type}
           onChange={(e) => setType(e.target.value as ItemType)}
-          className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm"
+          className="rdb-select"
+          style={{ width: 150 }}
         >
           {options.map((t) => (
             <option key={t} value={t}>
@@ -54,10 +56,10 @@ export default function AddSection({ types, label }: { types?: ItemType[]; label
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Title, e.g. Software Developer"
-        className={`max-w-xs ${inputClass}`}
+        className={inputClass}
       />
-      <button disabled={pending} className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm disabled:opacity-50">
-        {label}
+      <button disabled={pending} className={smallButton}>
+        <Plus className="rdb-icon" aria-hidden /> {label}
       </button>
       <SaveStatus message={isError ? message : null} isError={isError} />
     </form>

@@ -1,46 +1,111 @@
 import Link from "next/link";
 
 const STEPS = [
-  ["Upload your resume", "PDF or Word. We read it into your profile once, so you never upload it again."],
-  ["Check your profile", "Fix anything we got wrong, and add a short personal background."],
-  ["Paste a job posting", "Company, job title, and the job description."],
-  ["See it reordered", "Your most relevant experience and projects move to the top, and your skills are sorted by relevance."],
-  ["Compare every bullet", "Each of your bullets sits beside an AI rewrite aimed at the job. Keep yours or take the AI's, one by one."],
-  ["Add a tailored summary", "Optionally, a short summary written from your background and aimed at the posting."],
-  ["Download", "Get your tailored resume as Word and PDF."],
+  [
+    "Create your profile",
+    "Upload your resume once (PDF or Word) and we read it into a structured profile: contact details, experience, projects, education and skills. Check it over, fix anything we misread, and add a few lines about who you are and what you want next. You only do this once.",
+  ],
+  [
+    "Tailor to a job posting",
+    "Paste the company, job title and description. Your most relevant experience and projects move up, and skills are sorted by what the job asks for. You review every suggested change and accept or reject each one, so nothing is rewritten without your say.",
+  ],
+  [
+    "Download and track",
+    "Download the tailored resume as a PDF or Word file. Each application is saved to your tracker with a frozen copy of the exact resume you sent, so you can re-download it later and keep its status up to date as you hear back.",
+  ],
+];
+
+const PROMISES = [
+  [
+    "True to you, every time.",
+    "We reorder and rephrase what's already in your profile. We never add experience you don't have, and you approve every line.",
+  ],
+  [
+    "Your agents can use it too.",
+    "Connect Claude, Muse or any MCP agent. They send a posting, get back a tailored one-page PDF, and tell us when they've applied.",
+  ],
+  [
+    "Your inbox keeps score.",
+    "Connect Gmail and replies from employers move applications along your Tracker. It only reads; it never sends.",
+  ],
 ];
 
 export default function Landing() {
   return (
-    <div className="mx-auto max-w-3xl px-6 py-16">
-      <h1 className="text-3xl font-semibold">Tailor your resume to the job. You decide every change.</h1>
-      <p className="mt-3 text-gray-600">
-        ResumeDB markets your real experience to the job you want, and shows every AI rewrite next to
-        your original, like a diff.
-      </p>
-
-      <ol className="mt-10 space-y-4">
-        {STEPS.map(([title, body], i) => (
-          <li key={title} className="flex gap-4 rounded-lg border border-gray-200 bg-white p-4">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gray-900 text-sm text-white">
-              {i + 1}
-            </span>
-            <div>
-              <h2 className="font-medium">{title}</h2>
-              <p className="text-sm text-gray-600">{body}</p>
+    <>
+      <section className="ld-hero">
+        <div>
+          <p className="rdb-eyebrow">
+            For the job hunt you&apos;d rather not do by hand
+          </p>
+          <h1>Let us do the tedious part.</h1>
+          <p className="ld-lede">
+            ResumeDB tailors your resume to each job from one honest profile of
+            everything you&apos;ve done. Every rewrite sits beside your own
+            words, and nothing goes out that you didn&apos;t choose.
+          </p>
+          <div className="rdb-actions" style={{ marginTop: 28 }}>
+            <Link href="/sign-up" className="rdb-btn rdb-btn--primary">
+              Create an account
+            </Link>
+            <Link href="/sign-in" className="rdb-btn rdb-btn--secondary">
+              Sign in
+            </Link>
+          </div>
+          <p className="rdb-small rdb-muted" style={{ marginTop: 12 }}>
+            Free while in beta. Sign up with Google or email.
+          </p>
+        </div>
+        <div className="ld-art" aria-hidden="true">
+          <div className="ld-sheet ld-back" />
+          <div className="ld-sheet ld-front">
+            <div className="ld-pill" style={{ width: "70%" }} />
+            <div className="ld-pill tailored" style={{ width: "90%" }} />
+            <div className="ld-pill" style={{ width: "55%" }} />
+            <div className="ld-cmp">
+              <div className="side mine">
+                <span>Yours</span>Built ETL jobs in Java and SQL that load daily
+                transaction data.
+              </div>
+              <div className="side ai">
+                <span>For this job</span>Built <mark>batch data pipelines</mark>{" "}
+                in Java and SQL that load daily transaction data.
+              </div>
             </div>
-          </li>
-        ))}
-      </ol>
+          </div>
+        </div>
+      </section>
 
-      <div className="mt-10 flex gap-3">
-        <Link href="/sign-up" className="rounded-md bg-gray-900 px-4 py-2 text-white">
-          Sign up
-        </Link>
-        <Link href="/sign-in" className="rounded-md border border-gray-300 bg-white px-4 py-2">
-          Sign in
-        </Link>
-      </div>
-    </div>
+      <section className="ld-how">
+        <h2>How it works</h2>
+        <ol className="ld-steps">
+          {STEPS.map(([title, body], i) => (
+            <li key={title}>
+              <span className="n">{String(i + 1).padStart(2, "0")}</span>
+              <div>
+                <h3>{title}</h3>
+                <p>{body}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section className="ld-promise">
+        {PROMISES.map(([title, body]) => (
+          <div key={title}>
+            <h2>{title}</h2>
+            <p>{body}</p>
+          </div>
+        ))}
+      </section>
+
+      <footer className="ld-foot">
+        <span className="rdb-brand">ResumeDB</span>
+        <span className="rdb-small rdb-muted">
+          Tailored to the job. True to you.
+        </span>
+      </footer>
+    </>
   );
 }

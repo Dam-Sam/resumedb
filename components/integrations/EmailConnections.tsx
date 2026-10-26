@@ -14,62 +14,104 @@ export interface ConnectionRow {
 }
 
 // What came back from Google's consent screen (?gmail=...).
-const RESULTS: Record<string, { tone: "ok" | "bad"; text: string }> = {
-  connected: { tone: "ok", text: "Gmail connected. New emails from employers will update your Tracker." },
-  cancelled: { tone: "bad", text: "Gmail wasn't connected." },
-  "no-access": { tone: "bad", text: "Gmail wasn't connected: tick the box that allows reading your email, then try again." },
-  taken: { tone: "bad", text: "That Gmail address is already connected to another ResumeDB account." },
-  failed: { tone: "bad", text: "Couldn't connect Gmail. Please try again." },
+const RESULTS: Record<
+  string,
+  { tone: "info" | "attention"; text: string; lead: string }
+> = {
+  connected: {
+    tone: "info",
+    lead: "Gmail connected.",
+    text: "New emails from employers will update your Tracker.",
+  },
+  cancelled: { tone: "attention", lead: "Gmail wasn't connected.", text: "" },
+  "no-access": {
+    tone: "attention",
+    lead: "Gmail wasn't connected.",
+    text: "Tick the box that allows reading your email, then try again.",
+  },
+  taken: {
+    tone: "attention",
+    lead: "That Gmail address is already connected to another ResumeDB account.",
+    text: "",
+  },
+  failed: {
+    tone: "attention",
+    lead: "Couldn't connect Gmail.",
+    text: "Please try again.",
+  },
 };
 
-export default function EmailConnections({ connections, result }: { connections: ConnectionRow[]; result?: string }) {
+export default function EmailConnections({
+  connections,
+  result,
+}: {
+  connections: ConnectionRow[];
+  result?: string;
+}) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const message = result ? RESULTS[result] : undefined;
 
   return (
-    <div className="space-y-4 text-sm">
-      <p className="text-gray-600">
-        Connect your inbox and ResumeDB reads new emails from employers to keep your Tracker statuses up to date. It only reads
-        mail; it never sends or changes anything.
-      </p>
-
+    <div>
       {message && (
         <div
           role="status"
-          className={`rounded-md border p-3 ${message.tone === "ok" ? "border-green-300 bg-green-50 text-green-900" : "border-amber-300 bg-amber-50 text-amber-900"}`}
+          className={`rdb-notice rdb-notice--${message.tone}`}
+          style={{ maxWidth: "none", marginBottom: 16 }}
         >
-          {message.text}
+          <div>
+            <strong>{message.lead}</strong> {message.text}
+          </div>
         </div>
       )}
 
-      {connections.map((c) => (
-        <div key={c.id} className="flex items-start justify-between gap-4 rounded-md border border-gray-200 p-3">
-          <div>
-            <div className="font-medium">{c.email_address}</div>
-            <div className="text-gray-600">
+      {connections.length === 0 && (
+        <p className="rdb-muted" style={{ margin: "0 0 12px" }}>
+          No inbox connected.
+        </p>
+      )}
+
+      <div className="ig-list">
+        {connections.map((c) => (
+          <div key={c.id} className="ig-row">
+            <div className="ig-gm" aria-hidden>
+              G
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <b>{c.email_address}</b>
               {c.status === "active" ? (
-                c.last_synced_at ? (
-                  <>
-                    Watching. Last checked <LocalDate iso={c.last_synced_at} withTime />
-                  </>
-                ) : (
-                  "Watching for new emails."
-                )
+                <div className="rdb-small rdb-muted">
+                  <span className="ig-live" />
+                  {c.last_synced_at ? (
+                    <>
+                      Watching · last checked{" "}
+                      <LocalDate iso={c.last_synced_at} withTime />
+                    </>
+                  ) : (
+                    "Watching for new emails"
+                  )}
+                </div>
               ) : (
-                <span className="text-red-700">Not connected anymore.</span>
+                <div className="rdb-small" style={{ color: "var(--danger)" }}>
+                  Not connected anymore. Google stopped giving us access.
+                </div>
+              )}
+              {c.last_error && (
+                <div className="rdb-small rdb-muted">{c.last_error}</div>
               )}
             </div>
-            {c.last_error && <div className="mt-1 text-amber-800">{c.last_error}</div>}
-          </div>
-          <div className="flex shrink-0 gap-2">
             {c.status !== "active" && (
-              <a href="/api/email/gmail/connect" className="rounded-md border border-gray-300 px-3 py-1.5">
+              <a
+                href="/api/email/gmail/connect"
+                className="rdb-btn rdb-btn--primary rdb-btn--sm"
+              >
                 Reconnect
               </a>
             )}
             <button
               disabled={pending}
+              className={`rdb-btn rdb-btn--sm ${c.status === "active" ? "rdb-btn--secondary" : "rdb-btn--quiet"}`}
               onClick={() =>
                 startTransition(async () => {
                   setError(null);
@@ -77,19 +119,26 @@ export default function EmailConnections({ connections, result }: { connections:
                   if (r.error) setError(r.error);
                 })
               }
-              className="rounded-md border border-gray-300 px-3 py-1.5 disabled:opacity-50"
             >
-              Disconnect
+              {c.status === "active" ? "Disconnect" : "Remove"}
             </button>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
 
-      {error && <p className="text-red-700">{error}</p>}
+      {error && (
+        <p
+          className="rdb-help rdb-help--error"
+          role="alert"
+          style={{ marginTop: 12 }}
+        >
+          {error}
+        </p>
+      )}
 
       {!connections.some((c) => c.provider === "gmail") && (
         // A plain link: the route redirects to Google, which client navigation can't follow.
-        <a href="/api/email/gmail/connect" className="inline-block rounded-md bg-gray-900 px-4 py-2 font-medium text-white">
+        <a href="/api/email/gmail/connect" className="rdb-btn rdb-btn--primary">
           Connect Gmail
         </a>
       )}

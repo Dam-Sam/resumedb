@@ -97,9 +97,9 @@ export async function saveBackground(supabase: SupabaseClient, userId: string, b
   }
 }
 
-// The unreadable-resume path: an empty profile the user fills in by hand.
+// The fill-it-in-by-hand path: an empty profile the user completes on the next step.
 export async function saveEmptyContact(supabase: SupabaseClient, userId: string) {
-  // ignoreDuplicates: if parsing got as far as saving a name, keep it.
+  // ignoreDuplicates: never overwrite a name that's already saved.
   await check(
     supabase.from("contact_info").upsert({ user_id: userId, full_name: "" }, { ignoreDuplicates: true }),
   );

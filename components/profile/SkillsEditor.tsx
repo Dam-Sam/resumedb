@@ -1,9 +1,10 @@
 "use client";
 
+import { X } from "lucide-react";
 import { useState } from "react";
 import * as actions from "@/app/profile/actions";
 import type { Profile } from "@/lib/profile/repository";
-import { inputClass, SaveStatus, smallButton, useSave } from "./useSave";
+import { SaveStatus, smallButton, useSave } from "./useSave";
 
 // All your skills: name and category save when you leave the field.
 export default function SkillsEditor({ skills }: { skills: Profile["skills"] }) {
@@ -12,33 +13,45 @@ export default function SkillsEditor({ skills }: { skills: Profile["skills"] }) 
   const add = useSave();
 
   return (
-    <div className="space-y-2">
-      <div className="grid grid-cols-[1fr_1fr_auto] gap-2 text-xs text-gray-500">
-        <span>Skill</span>
-        <span>Category</span>
-        <span />
-      </div>
-      {skills.map((s) => (
-        <SkillRow key={s.id} skill={s} />
-      ))}
-      <div className="grid grid-cols-[1fr_1fr_auto] items-center gap-2">
-        <input aria-label="New skill" value={name} onChange={(e) => setName(e.target.value)} placeholder="New skill" className={inputClass} />
-        <input aria-label="New skill category" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. Languages" className={inputClass} />
-        <button
-          disabled={add.pending}
-          onClick={() =>
-            add.save(() => actions.addSkill(name, category), () => {
-              setName("");
-              setCategory("");
-            })
-          }
-          className={smallButton}
-        >
-          Add
-        </button>
-      </div>
+    <>
+      <table className="rdb-table pf-table">
+        <thead>
+          <tr>
+            <th>Skill</th>
+            <th>Category</th>
+            <th />
+          </tr>
+        </thead>
+        <tbody>
+          {skills.map((s) => (
+            <SkillRow key={s.id} skill={s} />
+          ))}
+          <tr>
+            <td>
+              <input aria-label="New skill" className="rdb-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="New skill" />
+            </td>
+            <td>
+              <input aria-label="New skill category" className="rdb-input" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. Languages" />
+            </td>
+            <td>
+              <button
+                disabled={add.pending}
+                onClick={() =>
+                  add.save(() => actions.addSkill(name, category), () => {
+                    setName("");
+                    setCategory("");
+                  })
+                }
+                className={smallButton}
+              >
+                Add
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
       <SaveStatus message={add.isError ? add.message : null} isError={add.isError} />
-    </div>
+    </>
   );
 }
 
@@ -50,17 +63,19 @@ function SkillRow({ skill }: { skill: Profile["skills"][number] }) {
     if (name !== skill.name || category !== (skill.category ?? "")) save(() => actions.saveSkill(skill.id, name, category));
   };
   return (
-    <div className="grid grid-cols-[1fr_1fr_auto] items-center gap-2">
-      <input aria-label="Skill" value={name} onChange={(e) => setName(e.target.value)} onBlur={persist} className={inputClass} />
-      <input aria-label="Category" value={category} onChange={(e) => setCategory(e.target.value)} onBlur={persist} className={inputClass} />
-      <button disabled={pending} onClick={() => save(() => actions.removeSkill(skill.id))} className={smallButton}>
-        Remove
-      </button>
-      {isError && (
-        <div className="col-span-3">
-          <SaveStatus message={message} isError />
-        </div>
-      )}
-    </div>
+    <tr>
+      <td>
+        <input aria-label="Skill" className="rdb-input rdb-input--quiet" value={name} onChange={(e) => setName(e.target.value)} onBlur={persist} />
+        {isError && <SaveStatus message={message} isError />}
+      </td>
+      <td>
+        <input aria-label="Category" className="rdb-input rdb-input--quiet" value={category} onChange={(e) => setCategory(e.target.value)} onBlur={persist} />
+      </td>
+      <td style={{ width: 40 }}>
+        <button disabled={pending} onClick={() => save(() => actions.removeSkill(skill.id))} className="rdb-iconbtn" aria-label={`Remove ${skill.name}`}>
+          <X className="rdb-icon" aria-hidden />
+        </button>
+      </td>
+    </tr>
   );
 }

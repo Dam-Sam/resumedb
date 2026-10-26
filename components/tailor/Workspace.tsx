@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowLeft, Check, EyeOff, FileText, Plus, X } from "lucide-react";
 import { useEffect, useReducer, useState } from "react";
 import { formatRange } from "@/lib/profile/sections";
 import { buildFinalResume } from "@/lib/resume/final";
@@ -15,7 +16,7 @@ import {
 } from "@/lib/resume/types";
 import { workspaceReducer, type WorkspaceAction } from "@/lib/resume/workspace-reducer";
 import BulletRow from "./BulletRow";
-import DownloadButtons from "./DownloadButtons";
+import DownloadButtons, { type DownloadNotice } from "./DownloadButtons";
 import KeySummaryPanel from "./KeySummaryPanel";
 import ReplaceDialog from "./ReplaceDialog";
 import SummaryEditor from "./SummaryEditor";
@@ -37,6 +38,7 @@ export default function Workspace({
   const [adding, setAdding] = useState<TailoredItem | null>(null);
   const [fitting, setFitting] = useState(true);
   const [pages, setPages] = useState<number | null>(null);
+  const [notice, setNotice] = useState<DownloadNotice>(null);
   const { contact } = resume;
 
   // Starts at one page: cut lowest-relevance content until the real PDF fits.
@@ -74,40 +76,60 @@ export default function Workspace({
       )
     : [];
 
-  return (
-    <div className="space-y-6">
-      <div className="sticky top-0 z-10 -mx-6 flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-gray-50/95 px-6 py-3 backdrop-blur">
-        <h1 className="text-xl font-semibold">
-          {resume.jobTitle} <span className="font-normal text-gray-500">at {resume.company}</span>
-        </h1>
-        <div className="flex items-center gap-2">
-          <span
-            aria-live="polite"
-            className={`text-sm ${!fitting && pages !== null && pages > 1 ? "text-amber-700" : "text-gray-500"}`}
-          >
-            {fitting ? "Fitting to one page…" : pages === null ? "" : pages === 1 ? "1 page" : `${pages} pages`}
-          </span>
-          <DownloadButtons resume={resume} jobDescription={jobDescription} />
-          <button onClick={onStartOver} className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm">
-            New tailoring
-          </button>
-        </div>
-      </div>
+  // How many of the bullets showing use the rewrite (not yours, and not swapped in).
+  const shown = resume.sections.flatMap((sec) => (sec.kind === "items" ? sec.items.filter((i) => !i.removed).flatMap((i) => i.bullets.filter((b) => !b.removed)) : []));
+  const rewrites = shown.filter((b) => b.ai !== null && b.selected === "ai").length;
+  const skillsShowing = resume.sections.flatMap((sec) => (sec.kind === "skills" ? sec.skills.filter((k) => !k.removed).map((k) => k.name) : []));
+  const overOnePage = !fitting && pages !== null && pages > 1;
 
-      <div className="grid gap-6 lg:grid-cols-[11rem_minmax(0,1fr)_16rem]">
-        <div>
-          <div className="lg:sticky lg:top-6">
-            <TableOfContents
-              sections={resume.sections}
-              onMove={(from, to) => dispatch({ type: "moveSection", from, to })}
-            />
+  return (
+    <>
+      <div className="ws-bar">
+        <div className="ws-bar__title">
+          <button
+            onClick={onStartOver}
+            className="rdb-crumb"
+            style={{ margin: 0, border: 0, background: "none", cursor: "pointer", font: "inherit" }}
+          >
+            <ArrowLeft className="rdb-icon" aria-hidden /> New tailoring
+          </button>
+          <span className="sep" />
+          <h1>
+            {resume.jobTitle} <span>at {resume.company}</span>
+          </h1>
+        </div>
+        <div className="ws-bar__meta">
+          <span className={`ws-fit ${fitting ? "" : overOnePage ? "warn" : pages === 1 ? "ok" : ""}`} aria-live="polite">
+            <FileText className="rdb-icon" width={14} height={14} aria-hidden />
+            {fitting
+              ? "Fitting to one page…"
+              : pages === null
+                ? "Checking page count…"
+                : pages === 1
+                  ? "Fits on 1 page"
+                  : `${pages} pages: hide a bullet or skill to fit one`}
+          </span>
+          <span className="rdb-small rdb-muted">
+            {rewrites} of {shown.length} bullets use the rewrite
+          </span>
+        </div>
+        <DownloadButtons resume={resume} jobDescription={jobDescription} onNotice={setNotice} />
+      </div>
+      {notice && (
+        <div style={{ padding: "16px 32px 0", maxWidth: 1440, margin: "0 auto" }}>
+          <div role="alert" className={`rdb-notice rdb-notice--${notice.kind}`}>
+            <div>{notice.text}</div>
           </div>
         </div>
+      )}
 
-        <article className="space-y-8 rounded-lg border border-gray-200 bg-white p-6">
-          <header>
-            <h2 className="text-2xl font-semibold">{contact?.full_name || "Your name"}</h2>
-            <p className="text-sm text-gray-600">
+      <div className="ws-grid">
+        <TableOfContents sections={resume.sections} onMove={(from, to) => dispatch({ type: "moveSection", from, to })} />
+
+        <article className="ws-paper">
+          <header className="ws-ph">
+            <h2>{contact?.full_name || "Your name"}</h2>
+            <p>
               {[contact?.email, contact?.phone, contact?.location, ...resume.links.map((l) => l.url)]
                 .filter(Boolean)
                 .join(" · ")}
@@ -115,19 +137,18 @@ export default function Workspace({
           </header>
 
           {resume.sections.map((section) => (
-            <section key={section.key} id={`section-${section.key}`} className="scroll-mt-6">
-              <h3 className="mb-3 border-b border-gray-200 pb-1 text-sm font-semibold uppercase tracking-wide">
+            <section key={section.key} id={`section-${section.key}`}>
+              <h3 className="ws-sh">
                 {section.title}
+                {section.kind === "summary" && <span className="tag">Written for this job</span>}
+                {section.kind === "skills" && <span className="tag">Most relevant first</span>}
               </h3>
               {section.kind === "summary" && (
-                <SummaryEditor
-                  value={resume.summary ?? ""}
-                  onChange={(text) => dispatch({ type: "editSummary", text })}
-                />
+                <SummaryEditor value={resume.summary ?? ""} onChange={(text) => dispatch({ type: "editSummary", text })} />
               )}
               {section.kind === "skills" && <Skills skills={section.skills} dispatch={dispatch} />}
               {section.kind === "items" && (
-                <div className="space-y-6">
+                <div>
                   {section.items
                     .filter((item) => !item.removed)
                     .map((item) => (
@@ -140,7 +161,7 @@ export default function Workspace({
                       />
                     ))}
                   <AddBack
-                    label="Add project"
+                    label="Add a project back"
                     options={section.items.filter((i) => i.removed).map((i) => ({ id: i.id, name: itemTitle(i) }))}
                     onAdd={(itemId) => dispatch({ type: "setItemRemoved", itemId, removed: false })}
                   />
@@ -150,13 +171,14 @@ export default function Workspace({
           ))}
         </article>
 
-        <KeySummaryPanel keySummary={resume.keySummary} />
+        <KeySummaryPanel keySummary={resume.keySummary} resumeSkills={skillsShowing} jobDescription={jobDescription} />
       </div>
 
       {adding && (
         <ReplaceDialog
           title="Add a bullet back"
           empty="Every bullet for this item is already showing."
+          subtitle={<>Hidden bullets from <b>{itemTitle(adding)}</b>.</>}
           options={(findItem(resume, adding.id)?.bullets ?? [])
             .filter((b) => b.removed)
             .map((b) => ({ id: b.id, body: b.ai ?? b.original }))}
@@ -170,6 +192,7 @@ export default function Workspace({
 
       {replacing && (
         <ReplaceDialog
+          subtitle={<>Other bullets from <b>{itemTitle(replacing.item)}{replacing.item.organization ? ` · ${replacing.item.organization}` : ""}</b> in your profile.</>}
           options={replaceOptions}
           onClose={() => setReplacing(null)}
           onPick={(bullet) => {
@@ -178,7 +201,7 @@ export default function Workspace({
           }}
         />
       )}
-    </div>
+    </>
   );
 }
 
@@ -200,40 +223,37 @@ function Item({
   const dates = formatRange(item.start_date, item.end_date, item.is_current);
   const hidden = item.bullets.filter((b) => b.removed).length;
   return (
-    <div>
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h4 className="font-medium">
-          {itemTitle(item)}
-          {item.organization && <span className="font-normal text-gray-600"> · {item.organization}</span>}
-        </h4>
-        {dates && <span className="text-sm text-gray-500">{dates}</span>}
+    <div className="ws-item">
+      <div className="ws-ih">
+        <div>
+          <b>{itemTitle(item)}</b>
+          {item.organization && <span className="rdb-muted"> · {item.organization}</span>}
+        </div>
+        {dates && <span className="rdb-small rdb-muted">{dates}</span>}
       </div>
-      {item.aiTitle && (
-        <TitleChoice
-          item={item}
-          onSelect={(side) => dispatch({ type: "selectTitle", itemId: item.id, side })}
-        />
+      {item.aiTitle && <TitleChoice item={item} onSelect={(side) => dispatch({ type: "selectTitle", itemId: item.id, side })} />}
+      {item.description && (
+        <p className="rdb-small rdb-muted" style={{ margin: "0 0 10px" }}>
+          {item.description}
+        </p>
       )}
-      {item.description && <p className="mt-1 text-sm text-gray-700">{item.description}</p>}
-      <div className="mt-3 space-y-4">
-        {item.bullets
-          .filter((b) => !b.removed)
-          .map((b) => (
-            <BulletRow key={b.id} bullet={b} dispatch={dispatch} onReplace={() => onReplace(b.id)} />
-          ))}
-      </div>
-      <div className="mt-3 flex gap-2 text-xs">
+      {item.bullets
+        .filter((b) => !b.removed)
+        .map((b) => (
+          <BulletRow key={b.id} bullet={b} dispatch={dispatch} onReplace={() => onReplace(b.id)} />
+        ))}
+      <div className="ws-itemfoot">
         {hidden > 0 && (
-          <button onClick={onAdd} className="rounded border border-gray-300 bg-white px-2 py-1">
-            Add bullet ({hidden} hidden)
+          <button onClick={onAdd} className="rdb-btn rdb-btn--quiet rdb-btn--sm">
+            <Plus className="rdb-icon" aria-hidden /> Add a bullet back · {hidden} hidden
           </button>
         )}
         {PROJECT_TYPES.includes(item.type) && (
           <button
             onClick={() => dispatch({ type: "setItemRemoved", itemId: item.id, removed: true })}
-            className="rounded border border-gray-300 bg-white px-2 py-1"
+            className="rdb-btn rdb-btn--quiet rdb-btn--sm"
           >
-            Hide project
+            <EyeOff className="rdb-icon" aria-hidden /> Hide project
           </button>
         )}
       </div>
@@ -241,26 +261,20 @@ function Item({
   );
 }
 
-// Skills in relevance order. Irrelevant ones start hidden; × hides, the list adds back.
+// Skills in relevance order. Irrelevant ones start hidden; × hides, the dashed chip adds back.
 function Skills({ skills, dispatch }: { skills: TailoredSkill[]; dispatch: (a: WorkspaceAction) => void }) {
   return (
-    <div className="space-y-3">
-      <ul className="flex flex-wrap gap-2 text-sm">
-        {skills
-          .filter((k) => !k.removed)
-          .map((k) => (
-            <li key={k.id} className="flex items-center gap-1 rounded-full border border-gray-300 py-0.5 pl-3 pr-1">
-              {k.name}
-              <button
-                onClick={() => dispatch({ type: "setSkillRemoved", skillId: k.id, removed: true })}
-                aria-label={`Hide ${k.name}`}
-                className="rounded-full px-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
-              >
-                ×
-              </button>
-            </li>
-          ))}
-      </ul>
+    <div className="ws-chips">
+      {skills
+        .filter((k) => !k.removed)
+        .map((k) => (
+          <span key={k.id} className="rdb-chip">
+            {k.name}
+            <button onClick={() => dispatch({ type: "setSkillRemoved", skillId: k.id, removed: true })} aria-label={`Hide ${k.name}`}>
+              <X className="rdb-icon" width={14} height={14} aria-hidden />
+            </button>
+          </span>
+        ))}
       <AddBack
         label="Add skill"
         options={skills.filter((k) => k.removed).map((k) => ({ id: k.id, name: k.name }))}
@@ -270,7 +284,8 @@ function Skills({ skills, dispatch }: { skills: TailoredSkill[]; dispatch: (a: W
   );
 }
 
-// A picker for hidden projects or skills. Hidden when there's nothing to add.
+// A dashed chip that opens the hidden projects or skills as more dashed chips; click one to add it back.
+// Renders nothing when there's nothing hidden.
 function AddBack({
   label,
   options,
@@ -280,50 +295,39 @@ function AddBack({
   options: { id: string; name: string }[];
   onAdd: (id: string) => void;
 }) {
+  const [open, setOpen] = useState(false);
   if (!options.length) return null;
   return (
-    <select
-      aria-label={label}
-      value=""
-      onChange={(e) => e.target.value && onAdd(e.target.value)}
-      className="rounded border border-gray-300 bg-white px-2 py-1 text-xs"
-    >
-      <option value="">
-        {label} ({options.length} hidden)
-      </option>
-      {options.map((o) => (
-        <option key={o.id} value={o.id}>
-          {o.name}
-        </option>
-      ))}
-    </select>
+    <>
+      <button className="rdb-chip rdb-chip--add" aria-expanded={open} onClick={() => setOpen(!open)}>
+        <Plus className="rdb-icon" width={14} height={14} aria-hidden /> {label} · {options.length} hidden
+      </button>
+      {open &&
+        options.map((o) => (
+          <button key={o.id} className="rdb-chip rdb-chip--add" onClick={() => onAdd(o.id)}>
+            <Plus className="rdb-icon" width={14} height={14} aria-hidden /> {o.name}
+          </button>
+        ))}
+    </>
   );
 }
 
 // The AI suggested a different title for this role: yours or theirs, yours to start.
 function TitleChoice({ item, onSelect }: { item: TailoredItem; onSelect: (side: Side) => void }) {
-  const option = (side: Side, label: string, text: string, tint: string) => {
-    const selected = item.titleSelected === side;
+  const pill = (side: Side, text: string, tag: string) => {
+    const on = item.titleSelected === side;
     return (
-      <button
-        onClick={() => onSelect(side)}
-        aria-pressed={selected}
-        className={`rounded-md px-3 py-2 text-left text-sm ${tint} ${
-          selected ? "border-2 border-gray-900" : "border border-gray-200 opacity-55"
-        }`}
-      >
-        <span className="flex items-center justify-between gap-2 text-xs text-gray-600">
-          {label}
-          {selected && <span className="rounded bg-gray-900 px-1.5 py-0.5 font-medium text-white">Selected</span>}
-        </span>
-        <span className="mt-1 block font-medium">{text}</span>
+      <button className="ws-tp" role="radio" aria-checked={on} onClick={() => onSelect(side)}>
+        {on && <Check className="rdb-icon" width={14} height={14} aria-hidden />}
+        {text} <span>{tag}</span>
       </button>
     );
   };
   return (
-    <div className="mt-2 grid grid-cols-2 gap-3">
-      {option("original", "Your title", item.title, "bg-rose-50")}
-      {option("ai", "AI's suggested title", item.aiTitle!, "bg-emerald-50")}
+    <div className="ws-titlepick" role="radiogroup" aria-label="Job title on this resume">
+      <span className="rdb-small rdb-muted">Title on this resume</span>
+      {pill("original", item.title, "yours")}
+      {pill("ai", item.aiTitle!, "suggested")}
     </div>
   );
 }

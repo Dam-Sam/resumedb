@@ -1,12 +1,12 @@
 "use client";
 
-import type { WorkspaceAction } from "@/lib/resume/workspace-reducer";
+import { Check, Repeat2, X } from "lucide-react";
+import { diffWords } from "@/lib/resume/diff";
 import { sideText, type Side, type TailoredBullet } from "@/lib/resume/types";
+import type { WorkspaceAction } from "@/lib/resume/workspace-reducer";
 
-const button = "rounded border border-gray-300 bg-white px-2 py-1 disabled:opacity-40";
-
-// One bullet: yours on the left, the AI's on the right. Only the selected side is editable.
-// A bullet swapped in with Replace has no AI version, so it's a single column.
+// One bullet: yours on the left, the rewrite on the right, the chosen side outlined and editable.
+// With no rewrite worth comparing (unchanged, or swapped in with Replace) it's a single card.
 export default function BulletRow({
   bullet,
   dispatch,
@@ -16,83 +16,95 @@ export default function BulletRow({
   dispatch: (a: WorkspaceAction) => void;
   onReplace: () => void;
 }) {
+  const swapped = bullet.ai === null;
   const unchanged = bullet.ai === bullet.original;
+  const single = swapped || unchanged;
 
   return (
-    <div className="space-y-2">
-      {bullet.ai === null ? (
-        <Column bullet={bullet} side="original" label="Yours (replaced, no AI version)" dispatch={dispatch} />
+    <div className={`ws-row ${single ? "one" : ""}`}>
+      {single ? (
+        <Card
+          bullet={bullet}
+          side={bullet.selected}
+          label={swapped ? "Swapped in from your profile" : "Yours · no rewrite needed"}
+          plain={unchanged}
+          dispatch={dispatch}
+        />
       ) : (
-        <div className="grid grid-cols-2 gap-3">
-          <Column bullet={bullet} side="original" label="Yours" dispatch={dispatch} />
-          <Column bullet={bullet} side="ai" label={unchanged ? "AI's (no change)" : "AI's"} dispatch={dispatch} />
-        </div>
+        <>
+          <Card bullet={bullet} side="original" label="Yours" dispatch={dispatch} />
+          <Card bullet={bullet} side="ai" label="Rewrite for this job" dispatch={dispatch} />
+        </>
       )}
-      <div className="flex gap-2 text-xs">
-        {bullet.ai !== null && (
-          <>
-            <button
-              onClick={() => dispatch({ type: "select", bulletId: bullet.id, side: "original" })}
-              disabled={bullet.selected === "original"}
-              className={button}
-            >
-              Keep mine
-            </button>
-            <button
-              onClick={() => dispatch({ type: "select", bulletId: bullet.id, side: "ai" })}
-              disabled={bullet.selected === "ai"}
-              className={button}
-            >
-              Use AI&apos;s
-            </button>
-          </>
-        )}
-        <span className="flex-1" />
-        <button onClick={onReplace} className={button}>
-          Replace
+      <div className="ws-acts">
+        <button className="rdb-iconbtn" aria-label="Replace with another bullet" title="Replace" onClick={onReplace}>
+          <Repeat2 className="rdb-icon" aria-hidden />
         </button>
-        <button onClick={() => dispatch({ type: "remove", bulletId: bullet.id })} className={button}>
-          Remove
+        <button
+          className="rdb-iconbtn"
+          aria-label="Remove bullet"
+          title="Remove"
+          onClick={() => dispatch({ type: "remove", bulletId: bullet.id })}
+        >
+          <X className="rdb-icon" aria-hidden />
         </button>
       </div>
     </div>
   );
 }
 
-function Column({
+function Card({
   bullet,
   side,
   label,
+  plain = false,
   dispatch,
 }: {
   bullet: TailoredBullet;
   side: Side;
   label: string;
+  plain?: boolean;
   dispatch: (a: WorkspaceAction) => void;
 }) {
   const selected = bullet.selected === side;
-  // Red/green like a Git diff, only as a hint; the border and "Selected" label carry the meaning.
-  const tint = side === "original" ? "bg-rose-50" : "bg-emerald-50";
+  const text = sideText(bullet, side);
+  // Changed words are marked on the rewrite only, against your own wording.
+  const parts = side === "ai" && bullet.ai !== null && bullet.ai !== bullet.original ? diffWords(sideText(bullet, "original"), text) : [{ text, changed: false }];
 
   return (
-    <div
-      className={`rounded-md p-3 text-sm ${tint} ${
-        selected ? "border-2 border-gray-900" : "border border-gray-200 opacity-55"
-      }`}
-    >
-      <div className="mb-1 flex items-center justify-between text-xs text-gray-600">
+    <div className={`ws-bc ${selected ? "on" : "off"} ${plain ? "nochange" : ""}`}>
+      <div className="ws-bc__head">
         <span>{label}</span>
-        {selected && <span className="rounded bg-gray-900 px-1.5 py-0.5 font-medium text-white">Selected</span>}
+        {selected && (
+          <span className="ws-inres">
+            <Check className="rdb-icon" width={14} height={14} aria-hidden /> In resume
+          </span>
+        )}
       </div>
       {selected ? (
-        <textarea
-          aria-label={`${label} bullet, selected`}
-          value={sideText(bullet, side)}
-          onChange={(e) => dispatch({ type: "edit", bulletId: bullet.id, text: e.target.value })}
-          className="field-sizing-content w-full resize-none rounded border border-gray-300 bg-white p-2"
-        />
+        <div className="ws-edit">
+          <div className="ws-edit__mirror" aria-hidden>
+            {parts.map((p, i) => (p.changed ? <mark key={i}>{p.text}</mark> : <span key={i}>{p.text}</span>))}
+            {"​"}
+          </div>
+          <textarea
+            aria-label={`${label} bullet, in resume`}
+            value={text}
+            onChange={(e) => dispatch({ type: "edit", bulletId: bullet.id, text: e.target.value })}
+          />
+        </div>
       ) : (
-        <p className="p-2">{sideText(bullet, side)}</p>
+        <>
+          <div style={{ flex: 1, whiteSpace: "pre-wrap" }}>
+            {parts.map((p, i) => (p.changed ? <mark key={i}>{p.text}</mark> : <span key={i}>{p.text}</span>))}
+          </div>
+          <button
+            className="rdb-btn rdb-btn--quiet rdb-btn--sm ws-use"
+            onClick={() => dispatch({ type: "select", bulletId: bullet.id, side })}
+          >
+            {side === "original" ? "Use mine" : "Use rewrite"}
+          </button>
+        </>
       )}
     </div>
   );

@@ -13,7 +13,8 @@ export const STATUS_LABELS: Record<Status, string> = {
   screening: "Screening",
   interview: "Interview",
   offer: "Offer",
-  rejected: "Rejected",
+  // Shown as "Closed": a rejection is not an error. The stored value stays `rejected`.
+  rejected: "Closed",
 };
 
 export interface ApplicationRow {
@@ -78,6 +79,18 @@ export async function listApplications(supabase: SupabaseClient, userId: string)
     .select("id, company, job_title, status, applied_at")
     .eq("user_id", userId)
     .order("applied_at", { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+// The latest few applications, newest first.
+export async function listRecentApplications(supabase: SupabaseClient, userId: string, limit: number): Promise<ApplicationRow[]> {
+  const { data, error } = await supabase
+    .from("applications")
+    .select("id, company, job_title, status, applied_at")
+    .eq("user_id", userId)
+    .order("applied_at", { ascending: false })
+    .limit(limit);
   if (error) throw error;
   return data;
 }
@@ -154,4 +167,19 @@ export async function setStatusFromEmail(
     .select("id");
   if (error) throw error;
   return data.length > 0;
+}
+
+export interface StatusHistory {
+  applied_at: string;
+  events: { status: Status; created_at: string }[];
+}
+
+// Every application's applied date and status changes, for the Dashboard's weekly chart.
+export async function listStatusHistory(supabase: SupabaseClient, userId: string): Promise<StatusHistory[]> {
+  const { data, error } = await supabase
+    .from("applications")
+    .select("applied_at, events:application_events(status, created_at)")
+    .eq("user_id", userId);
+  if (error) throw error;
+  return data as StatusHistory[];
 }

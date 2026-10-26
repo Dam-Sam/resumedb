@@ -1,29 +1,40 @@
 "use client";
 
+import { Download } from "lucide-react";
 import { useState } from "react";
 import { saveApplication } from "@/app/applications/actions";
 import { buildResumeFile, saveFile } from "@/lib/resume/files";
 import { buildFinalResume, resumeFileName } from "@/lib/resume/final";
 import type { TailoredResume } from "@/lib/resume/types";
 
+export type DownloadNotice = { kind: "error" | "attention"; text: React.ReactNode } | null;
+
 // Both files are built in the browser from the current workspace state.
 // Every download also saves the application to the Tracker: the first one
 // creates it, later ones from this workspace overwrite its frozen resume.
-export default function DownloadButtons({ resume, jobDescription }: { resume: TailoredResume; jobDescription: string }) {
+export default function DownloadButtons({
+  resume,
+  jobDescription,
+  onNotice,
+}: {
+  resume: TailoredResume;
+  jobDescription: string;
+  onNotice: (n: DownloadNotice) => void;
+}) {
   const [busy, setBusy] = useState<"docx" | "pdf" | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [applicationId, setApplicationId] = useState<string | undefined>();
+  const [trackerFailed, setTrackerFailed] = useState(false);
 
   async function download(ext: "docx" | "pdf") {
     setBusy(ext);
-    setError(null);
+    onNotice(null);
     const final = buildFinalResume(resume);
     try {
       const blob = await buildResumeFile(final, ext);
       saveFile(blob, resumeFileName(final.name, ext));
     } catch (err) {
       console.error(err);
-      setError("Couldn't create the file. Please try again.");
+      onNotice({ kind: "error", text: <><strong>We couldn&apos;t create the file.</strong> Your changes are still here; try again.</> });
       setBusy(null);
       return;
     }
@@ -35,21 +46,31 @@ export default function DownloadButtons({ resume, jobDescription }: { resume: Ta
       jobDescription,
       resume: final,
     }).catch(() => ({ id: undefined, error: "failed" }));
-    if (saved.id) setApplicationId(saved.id);
-    else setError("Downloaded, but couldn't save to your Tracker.");
+    if (saved.id) {
+      setApplicationId(saved.id);
+      setTrackerFailed(false);
+    } else {
+      setTrackerFailed(true);
+      onNotice({
+        kind: "attention",
+        text: (
+          <>
+            <strong>Your {ext === "pdf" ? "PDF" : "Word file"} downloaded,</strong> but we couldn&apos;t add it to your Tracker. Download again to retry.
+          </>
+        ),
+      });
+    }
     setBusy(null);
   }
 
-  const button = "rounded-md bg-gray-900 px-3 py-1.5 text-sm text-white disabled:opacity-50";
   return (
-    <div className="flex items-center gap-2">
-      {error && <span className="text-sm text-red-700">{error}</span>}
-      {!error && applicationId && <span className="text-sm text-gray-500">Saved to Tracker</span>}
-      <button onClick={() => download("docx")} disabled={busy !== null} className={button}>
-        {busy === "docx" ? "Creating…" : "Download Word"}
+    <div className="rdb-actions">
+      {!trackerFailed && applicationId && <span className="rdb-save">Saved to Tracker</span>}
+      <button onClick={() => download("docx")} disabled={busy !== null} className="rdb-btn rdb-btn--secondary rdb-btn--sm">
+        <Download className="rdb-icon" aria-hidden /> {busy === "docx" ? "Creating…" : "Word"}
       </button>
-      <button onClick={() => download("pdf")} disabled={busy !== null} className={button}>
-        {busy === "pdf" ? "Creating…" : "Download PDF"}
+      <button onClick={() => download("pdf")} disabled={busy !== null} className="rdb-btn rdb-btn--primary rdb-btn--sm">
+        <Download className="rdb-icon rdb-icon-on-primary" aria-hidden /> {busy === "pdf" ? "Creating…" : "PDF"}
       </button>
     </div>
   );

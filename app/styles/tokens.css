@@ -1,0 +1,109 @@
+/* ResumeDB: generated from the design system's tokens.json. Do not edit by hand. */
+:root, [data-theme="light"] {
+  --surface: #f6f3ec;
+  --surface-raised: #fffdf9;
+  --surface-sunken: #ece7dd;
+  --line: #e0d9cc;
+  --line-strong: #8a8478;
+  --ink: #1e2925;
+  --ink-muted: #56615c;
+  --ink-subtle: #646e69;
+  --pine: #2f5d50;
+  --on-pine: #fffdf9;
+  --pine-soft: #dce8e2;
+  --pine-ink: #2a5246;
+  --clay: #b8633f;
+  --clay-soft: #f5e3d8;
+  --clay-ink: #93492b;
+  --status-applied: #dde8f0;
+  --status-applied-ink: #2f5f80;
+  --status-received: #d6ebe4;
+  --status-received-ink: #1f6650;
+  --status-screening: #e9e1f3;
+  --status-screening-ink: #5b3f8a;
+  --status-interview: #f6e6c4;
+  --status-interview-ink: #80540c;
+  --status-offer: #d9ead0;
+  --status-offer-ink: #3c6a2a;
+  --status-closed: #e8e5df;
+  --status-closed-ink: #5f6661;
+  --danger: #b3402c;
+  --danger-soft: #f7dfd8;
+  --danger-ink: #9b3524;
+  --focus: var(--pine);
+  --chart-applied: #4b8be0;
+  --chart-received: #00876a;
+  --chart-screening: #7d4fb0;
+  --chart-interview: #e0a030;
+  --chart-offer: #c8508c;
+  --chart-closed: #8f897e;
+  --shadow-sm: 0 1px 2px rgba(30, 41, 37, 0.06);
+  --shadow-md: 0 8px 24px rgba(30, 41, 37, 0.10);
+}
+[data-theme="dark"] {
+  --surface: #141a18;
+  --surface-raised: #1c2421;
+  --surface-sunken: #0f1412;
+  --line: #2b3531;
+  --line-strong: #6f7b76;
+  --ink: #ece8df;
+  --ink-muted: #a8b1ac;
+  --ink-subtle: #8e9893;
+  --pine: #8fc4b0;
+  --on-pine: #10201a;
+  --pine-soft: #203a32;
+  --pine-ink: #a6d4c2;
+  --clay: #df9a76;
+  --clay-soft: #3c281f;
+  --clay-ink: #e9ad8d;
+  --status-applied: #1d2f3b;
+  --status-applied-ink: #9cc6e2;
+  --status-received: #183a31;
+  --status-received-ink: #8fd4bd;
+  --status-screening: #2c2340;
+  --status-screening-ink: #c9b5ec;
+  --status-interview: #3a2f17;
+  --status-interview-ink: #e8c37a;
+  --status-offer: #22331c;
+  --status-offer-ink: #a9d495;
+  --status-closed: #262b29;
+  --status-closed-ink: #b0b7b3;
+  --danger: #e88a76;
+  --danger-soft: #3d211b;
+  --danger-ink: #f0a493;
+  --focus: var(--pine);
+  --chart-applied: #4f8ce2;
+  --chart-received: #0e8668;
+  --chart-screening: #7f4fb8;
+  --chart-interview: #b8801c;
+  --chart-offer: #d8689d;
+  --chart-closed: #7d8782;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+  --duration-calm: 220ms;
+  --ease-calm: cubic-bezier(0.2, 0, 0, 1);
+  --font-display: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --font-sans: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+
+/* next/font loads the three faces under generated names; point the tokens at them. */
+:root {
+  --font-display: var(--next-newsreader), "Iowan Old Style", Georgia, serif;
+  --font-sans: var(--next-hanken), "Helvetica Neue", Arial, sans-serif;
+  --font-mono: var(--next-plex-mono), ui-monospace, Menlo, monospace;
+}

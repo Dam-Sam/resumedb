@@ -20,14 +20,15 @@ export function useSave() {
   return { save, pending, message, isError: !pending && !!status.error };
 }
 
+// The quiet save line: a dot and "Saving…" / "Saved", or the error in danger text.
 export function SaveStatus({ message, isError }: { message: string | null; isError: boolean }) {
   if (!message) return null;
   return (
-    <span role="status" className={`text-xs ${isError ? "text-red-700" : "text-gray-500"}`}>
+    <span role="status" className={isError ? "pf-error" : "rdb-save"}>
       {message}
     </span>
   );
 }
 
-export const inputClass = "w-full rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm";
-export const smallButton = "rounded border border-gray-300 bg-white px-2 py-1 text-xs hover:bg-gray-50 disabled:opacity-50";
+export const inputClass = "rdb-input";
+export const smallButton = "rdb-btn rdb-btn--secondary rdb-btn--sm";

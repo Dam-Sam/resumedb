@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRight, Mail } from "lucide-react";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { answerSuggestion } from "@/app/applications/actions";
@@ -12,13 +13,22 @@ import type { Suggestion } from "@/lib/email/suggestions";
 // automatically. One click updates the status or sets the email aside.
 export default function Suggestions({ suggestions }: { suggestions: Suggestion[] }) {
   if (!suggestions.length) return null;
+  const n = suggestions.length;
   return (
-    <section className="mt-8 rounded-lg border border-amber-200 bg-amber-50/50 p-4">
-      <h2 className="text-sm font-semibold">Suggested updates</h2>
-      <p className="mt-0.5 text-sm text-gray-600">
-        From emails that look like a status change, but not clearly enough to update on their own.
-      </p>
-      <ul className="mt-4 space-y-3">
+    <section
+      className="rdb-section"
+      style={{ marginBottom: "var(--space-8)", boxShadow: "inset 3px 0 0 var(--clay)", paddingBottom: "var(--space-2)" }}
+    >
+      <div className="flex items-start gap-3" style={{ color: "var(--clay-ink)" }}>
+        <Mail className="rdb-icon" width={18} height={18} aria-hidden />
+        <div>
+          <h2 className="rdb-h3">
+            {n} update{n === 1 ? "" : "s"} from your inbox
+          </h2>
+          <p className="rdb-sub">These emails look like a status change, but not clearly enough to apply on their own.</p>
+        </div>
+      </div>
+      <ul style={{ listStyle: "none", margin: "var(--space-3) 0 0", padding: 0 }}>
         {suggestions.map((s) => (
           <SuggestionRow key={s.id} suggestion={s} />
         ))}
@@ -36,46 +46,47 @@ function SuggestionRow({ suggestion: s }: { suggestion: Suggestion }) {
       const result = await answerSuggestion(s.id, choice);
       if (result.error) setError(result.error);
     });
+  // Moving forward is the main action; moving to Closed is deliberately quieter.
+  const toClosed = s.proposed_status === "rejected";
 
   return (
-    <li className="rounded-md border border-gray-200 bg-white p-3 text-sm">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <Link href={`/applications/${s.application.id}`} className="font-medium hover:underline">
-            {s.application.company} <span className="font-normal text-gray-600">· {s.application.job_title}</span>
+    <li style={{ padding: "var(--space-4) 0", borderTop: "1px solid var(--line)" }}>
+      <div className="flex items-center gap-6">
+        <div className="min-w-0 flex-1">
+          <Link href={`/applications/${s.application.id}`} className="rdb-co" style={{ color: "var(--ink)", fontWeight: 600, textDecoration: "none" }}>
+            {s.application.company}{" "}
+            <span style={{ color: "var(--ink-muted)", fontWeight: 400 }}>· {s.application.job_title}</span>
           </Link>
-          <div className="mt-1.5 flex items-center gap-1.5">
+          <div className="my-2 flex items-center gap-2" style={{ color: "var(--ink-subtle)" }}>
             <StatusBadge status={s.application.status} />
-            <span className="text-gray-400" aria-label="to">
-              →
-            </span>
+            <ArrowRight className="rdb-icon" width={14} height={14} aria-label="to" />
             <StatusBadge status={s.proposed_status} />
           </div>
-          <div className="mt-2 truncate text-gray-700" title={s.subject}>
-            “{s.subject || "(no subject)"}”
-          </div>
-          <div className="text-xs text-gray-500">
-            {s.from_name ? `${s.from_name} <${s.from_address}>` : s.from_address} · <LocalDate iso={s.received_at} withTime />
-          </div>
+          <p className="truncate" style={{ margin: 0, fontSize: 14 }} title={s.subject}>
+            “{s.subject || "(no subject)"}”{" "}
+            <span style={{ color: "var(--ink-subtle)", fontSize: 13 }}>
+              · {s.from_name ? `${s.from_name} <${s.from_address}>` : s.from_address} · <LocalDate iso={s.received_at} withTime />
+            </span>
+          </p>
         </div>
-        <div className="flex shrink-0 gap-2">
+        <div className="rdb-actions">
           <button
             disabled={pending}
             onClick={() => answer("accept")}
-            className="rounded-md bg-gray-900 px-3 py-1.5 font-medium text-white disabled:opacity-50"
+            className={`rdb-btn rdb-btn--sm ${toClosed ? "rdb-btn--secondary" : "rdb-btn--primary"}`}
           >
-            Update to {STATUS_LABELS[s.proposed_status]}
+            Move to {STATUS_LABELS[s.proposed_status]}
           </button>
-          <button
-            disabled={pending}
-            onClick={() => answer("dismiss")}
-            className="rounded-md border border-gray-300 px-3 py-1.5 disabled:opacity-50"
-          >
-            Dismiss
+          <button disabled={pending} onClick={() => answer("dismiss")} className="rdb-btn rdb-btn--quiet rdb-btn--sm">
+            Not this
           </button>
         </div>
       </div>
-      {error && <p className="mt-2 text-red-700">{error}</p>}
+      {error && (
+        <div className="rdb-notice rdb-notice--error" role="alert" style={{ marginTop: "var(--space-3)" }}>
+          <div>{error}</div>
+        </div>
+      )}
     </li>
   );
 }
