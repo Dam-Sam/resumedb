@@ -1,25 +1,67 @@
+import { Check, X } from "lucide-react";
 import type { KeySummary } from "@/lib/resume/types";
 
-// What the posting is asking for, pulled out by the AI.
-export default function KeySummaryPanel({ keySummary }: { keySummary: KeySummary }) {
-  const groups: [string, string[]][] = [
-    ["Key skills", keySummary.skills],
+// What the posting is asking for, pulled out by the AI. Key skills are checked
+// against the skills currently showing in the resume.
+export default function KeySummaryPanel({
+  keySummary,
+  resumeSkills,
+  jobDescription,
+}: {
+  keySummary: KeySummary;
+  resumeSkills: string[];
+  jobDescription: string;
+}) {
+  const have = new Set(resumeSkills.map((s) => s.trim().toLowerCase()));
+  const lists: [string, string[]][] = [
     ["Experience", keySummary.experience],
     ["Culture", keySummary.culture],
   ];
   return (
-    <aside className="space-y-5 rounded-lg border border-gray-200 bg-white p-4 text-sm">
-      <h2 className="font-semibold">What the posting wants</h2>
-      {groups.map(([title, list]) => (
-        <div key={title}>
-          <h3 className="text-xs font-medium uppercase tracking-wide text-gray-500">{title}</h3>
-          <ul className="mt-1 list-disc space-y-1 pl-4">
-            {list.map((x) => (
-              <li key={x}>{x}</li>
-            ))}
-          </ul>
-        </div>
-      ))}
+    <aside className="ws-ks">
+      <h2 className="rdb-h3">What the posting wants</h2>
+      <p className="rdb-small rdb-muted" style={{ margin: "4px 0 16px" }}>
+        Pulled from the job description.
+      </p>
+      <p className="rdb-eyebrow">Key skills</p>
+      <ul className="ws-kskills">
+        {keySummary.skills.map((k) => {
+          const ok = have.has(k.trim().toLowerCase());
+          return (
+            <li key={k} className={ok ? "have" : "gap"}>
+              {ok ? (
+                <Check className="rdb-icon" width={14} height={14} role="img" aria-label="In your resume:" />
+              ) : (
+                <X className="rdb-icon" width={14} height={14} role="img" aria-label="Not in your resume:" />
+              )}
+              {k}
+            </li>
+          );
+        })}
+      </ul>
+      <p className="rdb-small rdb-muted" style={{ margin: "8px 0 0" }}>
+        A check means the skill is in this resume.
+      </p>
+      {lists.map(([title, list]) =>
+        list.length ? (
+          <div key={title}>
+            <p className="rdb-eyebrow" style={{ marginTop: 20 }}>
+              {title}
+            </p>
+            <ul className="ws-kl">
+              {list.map((x) => (
+                <li key={x}>{x}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null,
+      )}
+      <details className="ws-jd">
+        <summary>Job description</summary>
+        <p className="rdb-small rdb-muted" style={{ whiteSpace: "pre-wrap", maxHeight: 280, overflow: "auto" }}>
+          {jobDescription}
+        </p>
+      </details>
     </aside>
   );
 }

@@ -16,6 +16,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { GripVertical } from "lucide-react";
 
 // The resume's sections in order. Drag one by its handle to move it.
 export default function TableOfContents({
@@ -35,18 +36,32 @@ export default function TableOfContents({
   }
 
   return (
-    <nav aria-label="Contents" className="text-sm">
-      <h2 className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">Contents</h2>
+    <nav aria-label="Contents" className="ws-toc">
+      <p className="rdb-eyebrow">Contents</p>
       <DndContext id="toc" sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext items={sections.map((s) => s.key)} strategy={verticalListSortingStrategy}>
-          <ol className="space-y-1">
+          <ol>
             {sections.map((s) => (
               <Row key={s.key} id={s.key} title={s.title} />
             ))}
           </ol>
         </SortableContext>
       </DndContext>
-      <p className="mt-2 text-xs text-gray-500">Drag ⠿ to reorder.</p>
+      <p className="rdb-small rdb-muted">Drag to reorder sections. The download follows this order.</p>
+      <div className="ws-legend">
+        <p className="rdb-eyebrow">Reading the page</p>
+        <div>
+          <span className="ws-sw on" />
+          Goes in the resume
+        </div>
+        <div>
+          <span className="ws-sw off" />
+          Not used
+        </div>
+        <div>
+          <mark>words</mark>&nbsp;changed for this job
+        </div>
+      </div>
     </nav>
   );
 }
@@ -54,22 +69,11 @@ export default function TableOfContents({
 function Row({ id, title }: { id: string; title: string }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   return (
-    <li
-      ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`flex items-center gap-1 rounded bg-white ${isDragging ? "shadow-md ring-1 ring-gray-300" : ""}`}
-    >
-      <button
-        {...attributes}
-        {...listeners}
-        aria-label={`Move ${title}`}
-        className="cursor-grab touch-none px-1.5 py-1 text-gray-400 hover:text-gray-900"
-      >
-        ⠿
+    <li ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} className={isDragging ? "drag" : undefined}>
+      <button {...attributes} {...listeners} aria-label={`Move ${title}`} className="h">
+        <GripVertical className="rdb-icon" aria-hidden />
       </button>
-      <a href={`#section-${id}`} className="flex-1 rounded px-1 py-1 hover:bg-gray-100">
-        {title}
-      </a>
+      <a href={`#section-${id}`}>{title}</a>
     </li>
   );
 }

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import OnboardingSteps from "@/components/onboarding/OnboardingSteps";
 import OnboardingForm from "@/components/OnboardingForm";
 import { hasProfile } from "@/lib/profile/repository";
 import { createClient } from "@/lib/supabase/server";
@@ -12,11 +13,12 @@ export default async function Onboarding() {
   if (user && (await hasProfile(supabase, user.id))) redirect("/profile");
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-16">
-      <h1 className="text-2xl font-semibold">Set up your profile</h1>
-      <p className="mt-3 text-gray-600">
-        Upload your resume once. We&apos;ll read it into your profile, and you can fix anything we got
-        wrong on the next page.
+    <div className="rdb-page rdb-page--narrow">
+      <OnboardingSteps current={0} />
+      <h1 className="rdb-h1">Let&apos;s set up your profile.</h1>
+      <p className="rdb-lede">
+        Upload your resume once. We&apos;ll read it into your profile, and you
+        can fix anything we got wrong in the next step.
       </p>
       <OnboardingForm />
     </div>

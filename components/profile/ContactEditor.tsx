@@ -1,5 +1,6 @@
 "use client";
 
+import { X } from "lucide-react";
 import { useState } from "react";
 import * as actions from "@/app/profile/actions";
 import { LINK_TYPES } from "@/lib/ai/schemas";
@@ -19,50 +20,52 @@ export default function ContactEditor({ profile }: { profile: Profile }) {
   const backgroundSave = useSave();
 
   const field = (key: keyof typeof contact, label: string, type = "text") => (
-    <label className="block text-sm">
-      <span className="text-gray-600">{label}</span>
+    <label>
+      <span className="rdb-label">{label}</span>
       <input
         type={type}
         value={contact[key]}
         onChange={(e) => setContact({ ...contact, [key]: e.target.value })}
         onBlur={() => contactSave.save(() => actions.saveContact(contact))}
-        className={`mt-1 ${inputClass}`}
+        className={inputClass}
       />
     </label>
   );
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-3 sm:grid-cols-2">
+    <div>
+      <div className="pf-g2">
         {field("full_name", "Name")}
         {field("email", "Email", "email")}
         {field("phone", "Phone", "tel")}
         {field("location", "Location")}
       </div>
-      <SaveStatus message={contactSave.message} isError={contactSave.isError} />
-
-      <div>
-        <h3 className="text-sm font-medium">Links</h3>
-        <div className="mt-2 space-y-2">
-          {profile.links.map((l) => (
-            <LinkRow key={l.id} link={l} />
-          ))}
-          <NewLink />
-        </div>
+      <div style={{ marginTop: 8 }}>
+        <SaveStatus message={contactSave.message} isError={contactSave.isError} />
       </div>
 
-      <label className="block text-sm">
-        <span className="font-medium">Background</span>
-        <span className="block text-gray-600">Who you are and what you&apos;re looking for. Used for tailored summaries.</span>
+      <div style={{ marginTop: 20 }}>
+        <span className="rdb-label">Links</span>
+        {profile.links.map((l) => (
+          <LinkRow key={l.id} link={l} />
+        ))}
+        <NewLink />
+      </div>
+
+      <label style={{ display: "block", marginTop: 20 }}>
+        <span className="rdb-label">About you</span>
+        <span className="rdb-help">Who you are and what you&apos;re looking for. Used only for tailored summaries.</span>
         <textarea
-          rows={4}
+          rows={3}
           value={background}
           onChange={(e) => setBackground(e.target.value)}
           onBlur={() => backgroundSave.save(() => actions.saveBackground(background))}
-          className={`mt-1 ${inputClass}`}
+          className="rdb-textarea"
         />
       </label>
-      <SaveStatus message={backgroundSave.message} isError={backgroundSave.isError} />
+      <div style={{ marginTop: 8 }}>
+        <SaveStatus message={backgroundSave.message} isError={backgroundSave.isError} />
+      </div>
     </div>
   );
 }
@@ -74,7 +77,7 @@ function LinkRow({ link }: { link: Profile["links"][number] }) {
   const persist = (t = type) => save(() => actions.saveLink(link.id, t, url));
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="pf-linkrow">
       <TypeSelect
         value={type}
         onChange={(t) => {
@@ -83,10 +86,14 @@ function LinkRow({ link }: { link: Profile["links"][number] }) {
         }}
       />
       <input value={url} onChange={(e) => setUrl(e.target.value)} onBlur={() => persist()} className={inputClass} />
-      <button disabled={pending} onClick={() => save(() => actions.removeLink(link.id))} className={smallButton}>
-        Remove
+      <button disabled={pending} onClick={() => save(() => actions.removeLink(link.id))} className="rdb-iconbtn" aria-label="Remove link">
+        <X className="rdb-icon" aria-hidden />
       </button>
-      <SaveStatus message={isError ? message : null} isError={isError} />
+      {isError && (
+        <div style={{ gridColumn: "1 / -1" }}>
+          <SaveStatus message={message} isError />
+        </div>
+      )}
     </div>
   );
 }
@@ -96,20 +103,24 @@ function NewLink() {
   const [url, setUrl] = useState("");
   const { save, pending, message, isError } = useSave();
   return (
-    <div className="flex items-center gap-2">
+    <div className="pf-linkrow">
       <TypeSelect value={type} onChange={setType} />
       <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…" className={inputClass} />
       <button disabled={pending} onClick={() => save(() => actions.addLink(type, url), () => setUrl(""))} className={smallButton}>
         Add link
       </button>
-      <SaveStatus message={isError ? message : null} isError={isError} />
+      {isError && (
+        <div style={{ gridColumn: "1 / -1" }}>
+          <SaveStatus message={message} isError />
+        </div>
+      )}
     </div>
   );
 }
 
 function TypeSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
-    <select value={value} onChange={(e) => onChange(e.target.value)} className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm">
+    <select value={value} onChange={(e) => onChange(e.target.value)} className="rdb-select">
       {LINK_TYPES.map((t) => (
         <option key={t} value={t}>
           {t}

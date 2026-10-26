@@ -5,23 +5,38 @@ import { createClient } from "@/lib/supabase/client";
 
 export default function ResendConfirmation({ email }: { email: string }) {
   const [status, setStatus] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   async function resend() {
-    setStatus("Sending…");
+    setBusy(true);
+    setStatus(null);
     const { error } = await createClient().auth.resend({
       type: "signup",
       email,
       options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
     });
     setStatus(error ? error.message : "Sent. Check your inbox.");
+    setBusy(false);
   }
 
   return (
-    <div className="mt-6">
-      <button onClick={resend} className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm">
-        Resend confirmation email
+    <div style={{ marginTop: 20 }}>
+      <button
+        onClick={resend}
+        disabled={busy}
+        className="rdb-btn rdb-btn--secondary"
+      >
+        {busy ? "Sending…" : "Resend confirmation email"}
       </button>
-      {status && <p className="mt-2 text-sm text-gray-600">{status}</p>}
+      {status && (
+        <p
+          className="rdb-save"
+          role="status"
+          style={{ margin: "12px 0 0", display: "flex" }}
+        >
+          {status}
+        </p>
+      )}
     </div>
   );
 }

@@ -1,10 +1,10 @@
 export default function ErrorAlert({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
-    <div role="alert" className="flex items-center justify-between gap-4 rounded-md border border-red-300 bg-red-50 p-4 text-sm text-red-900">
-      <span>{message}</span>
+    <div role="alert" className="rdb-notice rdb-notice--error" style={{ alignItems: "center", maxWidth: 680 }}>
+      <div style={{ flex: 1 }}>{message}</div>
       {onRetry && (
-        <button onClick={onRetry} className="shrink-0 rounded-md border border-red-300 bg-white px-3 py-1.5">
-          Retry
+        <button onClick={onRetry} className="rdb-btn rdb-btn--secondary rdb-btn--sm">
+          Try again
         </button>
       )}
     </div>

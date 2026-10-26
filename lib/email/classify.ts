@@ -65,10 +65,11 @@ export async function classifyEmail(
   // Short labels for the options; the description says which application each is.
   const labelToId = new Map(candidates.map((c, i) => [`application_${i + 1}`, c.id]));
   const applicationCriteria: Record<string, string> = {
-    [NONE]: "None of these. The email is about a different company or a different role, or it doesn't name a specific application.",
+    [NONE]: "None of these. The email is about a different company, or about a different role than any listed here.",
   };
   candidates.forEach((c, i) => {
-    applicationCriteria[`application_${i + 1}`] = `${c.job_title} at ${c.company}`;
+    applicationCriteria[`application_${i + 1}`] =
+      `${c.job_title} at ${c.company}. Also pick this for an email from ${c.company} that doesn't name a role.`;
   });
 
   const request = {
